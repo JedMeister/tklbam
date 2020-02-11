@@ -397,7 +397,7 @@ def main():
             if not isdir(raw_download_path):
                 fatal("%s=%s is not a directory" % (opt, val))
         else:
-            os.mkdir(raw_download_path)
+            os.makedirs(raw_download_path)
         if not opt_force and os.listdir(raw_download_path) != []:
             fatal("--raw-download=%s is not an empty directory, use --force if that is ok" % raw_download_path)
 
