@@ -85,6 +85,9 @@ Options / System restore:
     --noninteractive                  Disable interactive user prompts
     --force                           Disable sanity checking
 
+    --ignore-errors                   Ignore errors when downloading (passes switch to duplicity)
+                                       - disables automated restore and will download only
+                                       - if '--raw-download=' not specified, '--raw-download=/tklbam-dump'
     --debug                           Run interactive shell before Duplicity and before system restore
 
 Options / Configurable (see resolution order below):
@@ -317,7 +320,8 @@ def main():
                                         'noninteractive',
                                         'debug',
                                         'skip-files', 'skip-database', 'skip-packages',
-                                        'no-rollback'])
+                                        'no-rollback',
+                                        'ignore-errors'])
     except getopt.GetoptError, e:
         usage(e)
 
@@ -329,13 +333,6 @@ def main():
 
         elif opt == '--raw-download':
             raw_download_path = val
-            if exists(raw_download_path):
-                if not isdir(raw_download_path):
-                    fatal("%s=%s is not a directory" % (opt, val))
-
-            else:
-                os.mkdir(raw_download_path)
-
         elif opt == '--simulate':
             opt_simulate = True
         elif opt == '--limits':
@@ -382,6 +379,11 @@ def main():
 
         elif opt == '--debug':
             opt_debug = True
+        elif opt == '--ignore-errors':
+            if not raw_download_path:
+                raw_download_path = '/tklbam-dump'
+            ignore_errors = True
+
 
     for opt, val in opts:
         for skip_opt in ('files', 'packages', 'database'):
@@ -391,6 +393,11 @@ def main():
             os.environ['TKLBAM_RESTORE_SKIP_' + skip_opt.upper()] = 'yes'
 
     if raw_download_path:
+        if exists(raw_download_path):
+            if not isdir(raw_download_path):
+                fatal("%s=%s is not a directory" % (opt, val))
+        else:
+            os.mkdir(raw_download_path)
         if not opt_force and os.listdir(raw_download_path) != []:
             fatal("--raw-download=%s is not an empty directory, use --force if that is ok" % raw_download_path)
 
