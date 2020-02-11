@@ -296,6 +296,7 @@ def main():
     opt_key = None
     opt_address = None
     opt_logfile = PATH_LOGFILE
+    opt_ignore_err = False
 
     skip_files = False
     skip_database = False
@@ -382,8 +383,7 @@ def main():
         elif opt == '--ignore-errors':
             if not raw_download_path:
                 raw_download_path = '/tklbam-dump'
-            ignore_errors = True
-
+            opt_ignore_err = True
 
     for opt, val in opts:
         for skip_opt in ('files', 'packages', 'database'):
@@ -468,7 +468,10 @@ def main():
 
         def get_backup_extract():
             print fmt_title("Executing Duplicity to download %s to %s " % (address, raw_download_path))
-            downloader(raw_download_path, target, log=_print if not silent else None, debug=opt_debug, force=opt_force)
+            downloader(raw_download_path, target,
+                       log=_print if not silent else None,
+                       debug=opt_debug, force=opt_force,
+                       ignore_err=opt_ignore_err)
             return raw_download_path
 
         if raw_download_path:

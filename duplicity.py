@@ -150,7 +150,7 @@ class Downloader(AttrDict):
         self.cache_size = cache_size
         self.cache_dir = cache_dir
 
-    def __call__(self, download_path, target, debug=False, log=None, force=False):
+    def __call__(self, download_path, target, debug=False, log=None, force=False, ignore_err=False):
         if log is None:
             log = lambda s: None
 
@@ -172,6 +172,8 @@ class Downloader(AttrDict):
         args = [ '--s3-unencrypted-connection', target.address, download_path ]
         if force:
             args = [ '--force' ] + args
+        if ignore_err:
+            args = [ '--ignore-errors' ] + args
 
         command = Duplicity(opts, *args)
 
