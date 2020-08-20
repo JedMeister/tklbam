@@ -113,17 +113,17 @@ class InvalidBackupError(Error):
 
 class API(_API):
     def request(self, method, url, attrs={}, headers={}):
-        try:
-            return _API.request(self, method, url, attrs, headers)
-        except self.Error, e:
-            if e.name == "BackupRecord.NotFound":
-                raise InvalidBackupError(e.description)
+        #try:
+        return _API.request(self, method, url, attrs, headers)
+        #except self.Error, e:
+        #    if e.name == "BackupRecord.NotFound":
+        #        raise InvalidBackupError(e.description)
 
-            if e.name in ("BackupAccount.NotSubscribed",
-                         "BackupAccount.NotFound"):
-                raise NotSubscribed()
+        #    if e.name in ("BackupAccount.NotSubscribed",
+        #                 "BackupAccount.NotFound"):
+        #        raise NotSubscribed()
 
-            raise APIError(e.code, e.name, e.description)
+        #    raise APIError(e.code, e.name, e.description)
 
 class BackupRecord(AttrDict):
     @staticmethod
