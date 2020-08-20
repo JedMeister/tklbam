@@ -179,10 +179,13 @@ Generated backup encryption key:
             if not is_valid_apikey(apikey):
                 fatal("'%s' is an invalid API-KEY" % apikey)
 
-            try:
-                sub_apikey = hub.Backups.get_sub_apikey(apikey)
-            except Exception, e:
-                fatal(e)
+            # Remote try/except to get a stacktrace which might assist to diagnose issue
+            #try:
+
+            sub_apikey = hub.Backups.get_sub_apikey(apikey)
+
+            #except Exception, e:
+            #    fatal(e)
 
             registry.registry.sub_apikey = sub_apikey
 
