@@ -3,8 +3,11 @@
 # Original Author: Liraz Siri <liraz@turnkeylinux.org>
 # Updated by: Jeremy Davis <jeremy@turnkeylinux.org>
 
-fatal() { echo "FATAL: $*" >&2; exit 1; }
-info() { echo "INFO: $*"; }
+GRN='\033[1;32m'
+RED='\033[1;31m'
+NC='\033[0m'
+fatal() { echo -e "${RED}FATAL:${NC} $*" >&2; exit 1; }
+info() { echo -e "${GRN}INFO:${NC} $*"; }
 
 [[ -z "$DEBUG" ]] || set -x
 
@@ -42,6 +45,8 @@ EOF
     exit 1
 }
 
+echo
+
 [[ -n "$PACKAGE" ]] || PACKAGE="tklbam"
 
 base_url="https://raw.githubusercontent.com/turnkeylinux/common/master"
@@ -66,27 +71,31 @@ else
     fatal "APT_KEY_URL does not appear to be a GPG file (should end with .gpg or .asc)"
 fi
 
-# just in case there are already tkl repos enabled...
-find /etc/apt -type f -name "*.list" -exec sed "/archive.turnkeylinux.org/ s|^|#|g" \;
-
-if ! rgrep . /etc/apt/sources.list* | sed 's/#.*//' | grep -q "$APT_URL"; then
-    apt_name=$(sed -En "s|^http.*/([a-z\.]*)/.*|\1|p" <<<"$APT_URL")
-    apt_file="/etc/apt/sources.list.d/${apt_name}.list"
-
-    echo "deb [signed-by=/$KEY_FILE] $APT_URL $deb_dist main" > "$apt_file"
-
-    info "downloading $APT_KEY_URL"
-    local_file=/$KEY_FILE
-    if [[ -n "$tmp_file" ]]; then
-        local_file=$tmp_file
+# just in case there are already tkl repos enabled - disable them...
+# (a bit dirty because it will recomment existing commented lines, but does no harm)
+readarray -d '' apt_files < <(find /etc/apt -type f -name "*.list" -print0)
+for file in "${apt_files[@]}"; do
+    if grep -q archive.turnkeylinux.org "$file"; then
+        info "backing up $file"
+        sed -i.backup "/archive.turnkeylinux.org/ s|^|#|g" "$file"
     fi
-    wget -O "$local_file" "$APT_KEY_URL"
-    if [[ -n "$tmp_file" ]]; then
-        gpg -o "/$KEY_FILE" --dearmor "$tmp_file"
-        rm -f "$tmp_file"
-    fi
-    info "Added $APT_URL package source to $apt_file"
+done
+
+apt_name=$(sed -En "s|^http.*/([a-z\.]*)/.*|\1|p" <<<"$APT_URL")
+apt_file="/etc/apt/sources.list.d/${apt_name}.list"
+echo "deb [signed-by=/$KEY_FILE] $APT_URL $deb_dist main" > "$apt_file"
+info "downloading $APT_KEY_URL"
+
+local_file=/$KEY_FILE
+if [[ -n "$tmp_file" ]]; then
+    local_file=$tmp_file
 fi
+wget -O "$local_file" "$APT_KEY_URL"
+if [[ -n "$tmp_file" ]]; then
+    gpg -o "/$KEY_FILE" --dearmor "$tmp_file"
+    rm -f "$tmp_file"
+fi
+info "Added $APT_URL package source to $apt_file"
 
 info "Running 'apt-get update'"
 apt-get update \
@@ -94,4 +103,4 @@ apt-get update \
 
 info "Installing $PACKAGE"
 apt-get install --yes "$PACKAGE" \
-    || fatal "Package install failed, please report to TurnKe Linux."
+    || fatal "Package install failed, please report to TurnKey Linux."
