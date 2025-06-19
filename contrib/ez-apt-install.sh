@@ -75,9 +75,9 @@ fi
 # (a bit dirty because it will recomment existing commented lines, but does no harm)
 readarray -d '' apt_files < <(find /etc/apt -type f -name "*.list" -print0)
 for file in "${apt_files[@]}"; do
-    if grep -q archive.turnkeylinux.org "$file"; then
+    if grep -q "tkl-$deb_dist-main" "$file"; then
         info "backing up $file"
-        sed -i.backup "/archive.turnkeylinux.org/ s|^|#|g" "$file"
+        sed -i.bak "/archive.turnkeylinux.org/ s|^|#|g" "$file"
     fi
 done
 
