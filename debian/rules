@@ -1,5 +1,7 @@
 #! /usr/bin/make -f
 
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
 progname=$(shell awk '/^Source/ {print $$2}' debian/control)
 buildroot=debian/$(progname)
 
@@ -9,8 +11,13 @@ tmp=debian/tmp
 %:
 	dh $@
 
+execute_before_dh_clean:
+	# dh_clean will clean all other build files (in debian/tmp)
+	rm -rf lib/deps
+
 override_dh_auto_build:
 	./duct-tape-deps.sh
 
+# don't try to link libs - won't work because we build against pypy
 override_dh_shlibdeps:
 override_dh_makeshlibs:

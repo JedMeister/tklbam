@@ -6,10 +6,11 @@ Build-Depends:
  debhelper (>= 10),
  dh-exec,
  libcurl4-openssl-dev,
- wget,
+ curl,
  tar,
  librsync-dev (>= 0.9.6),
  libssl-dev,
+ libgmp-dev,
 Standards-Version: 4.0.0
 
 Package: tklbam
@@ -18,7 +19,7 @@ Depends:
  ca-certificates,
  ${misc:Depends},
  gnupg,
- ntpdate,
+ ntpsec-ntpdate,
  gpg (>= 2.2.12),
- tklbam-squid
+ tklbam-squid | squid-openssl | squid,
 Description: TurnKey GNU/Linux Backup and Migration agent
