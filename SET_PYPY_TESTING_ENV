@@ -1,0 +1,31 @@
+# source this file to set up env vars to run pypy in shell
+# useful for testing py2 commands in interactive python prompt
+#
+# NOTE: 'source' this file - DON'T try to execute it
+# useful for testing py2 commands in interactive python prompt
+
+_PYPY_BIN=/usr/lib/tklbam/deps/bin
+
+if [[ "$PATH" != *"$_PYPY_BIN"* ]]; then
+    export PATH="$PATH:$_PYPY_BIN"
+    echo "updating env:"
+    echo "PATH=$PATH"
+else
+    echo "pypy already in PATH"
+fi
+
+_PYPY_LD_LIB=/turnkey/public/trixie-tklbam-deb/usr/lib/tklbam/deps/lib
+
+if [[ -z "$LD_LIBRARY_PATH" ]]; then
+    export LD_LIBRARY_PATH="$_PYPY_LD_LIB"
+    echo "updating env:"
+    echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+elif [[ "$LD_LIBRARY_PATH" != *"$_PYPY_LD_LIB"* ]]; then
+    export LD_LIBRARY_PATH="$_PYPY_LD_LIB:$LD_LIBRARY_PATH"
+    echo "updating env:"
+    echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+else
+    echo "pypy libs already in LD_LIBRARY_PATH"
+fi
+
+unset _PYPY_BIN _PYPY_LD_LIB
