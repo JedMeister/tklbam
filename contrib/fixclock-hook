@@ -2,12 +2,11 @@
 # hook that runs ntpdate before duplicity to sync clock to UTC
 
 import os
-from os.path import realpath
-import sys
-import subprocess
 import shutil
+import subprocess
+import sys
+from os.path import realpath
 from string import Template
-from typing import Optional
 
 NTPSERVER = os.environ.get("NTPSERVER", "2.pool.ntp.org")
 
@@ -55,11 +54,11 @@ this warning. To stop this message from displaying, please run:
 
 
 def echo(msg: str, stderr: bool = False, fatal: bool = False) -> None:
-    """ Echo message to terminal (exit 1 if fatal)"""
+    """Echo message to terminal (exit 1 if fatal)"""
     output = sys.stdout
     if stderr:
         output = sys.stderr
-    print(msg, end=' ', file=output)
+    print(msg, end=" ", file=output)
     print(file=output)
     if fatal:
         sys.exit(1)
@@ -68,23 +67,26 @@ def echo(msg: str, stderr: bool = False, fatal: bool = False) -> None:
 def runit(command: list[str]) -> tuple[int, str, str]:
     """Run 'command' via subprocess; returns:
 
-        tuple(returncode, stdout, stderr)
+    tuple(returncode, stdout, stderr)
     """
-    if '/usr/sbin' not in os.environ['PATH']:
-        os.environ['PATH'] += ':/usr/sbin'
+    if "/usr/sbin" not in os.environ["PATH"]:
+        os.environ["PATH"] += ":/usr/sbin"
     full_path = shutil.which(command[0])
     if full_path is None:
-        echo(f"FATAL[{__file__}]: Couldn't find path to {command[0]}",
-             stderr=True, fatal=True)
+        echo(
+            f"FATAL[{__file__}]: Couldn't find path to {command[0]}",
+            stderr=True,
+            fatal=True,
+        )
     p = subprocess.run(command, capture_output=True, text=True)
     return p.returncode, p.stdout, p.stderr
 
 
-def is_container() -> Optional[str]:
+def is_container() -> str | None:
     """Check if running in container, if yes, return container type,
     otherwise 'no'"""
 
-    returncode, stdout, stderr = runit(['systemd-detect-virt', '-c'])
+    returncode, stdout, _ = runit(["systemd-detect-virt", "-c"])
 
     if returncode != 0:
         # "proper" VM or bare metal
@@ -97,10 +99,11 @@ def is_container() -> Optional[str]:
 def fixclock() -> None:
     command = ["ntpdate", "-u", NTPSERVER]
     echo("Updating system clock")
-    returncode, stdout, stderr = runit(command)
+    returncode, _, stderr = runit(command)
     if returncode != 0:
-        msg = Template(ERROR_TPL).substitute(COMMAND=' '.join(command),
-                                             ERROR=stderr)
+        msg = Template(ERROR_TPL).substitute(
+            COMMAND=" ".join(command), ERROR=stderr
+        )
         echo(msg, stderr=True, fatal=True)
 
 
@@ -112,7 +115,7 @@ def dont_fixclock(container: str) -> None:
 def main() -> None:
     op, state = sys.argv[1:]
 
-    if op in ('restore', 'backup') and state == 'pre':
+    if op in ("restore", "backup") and state == "pre":
         container = is_container()
         if not container:
             fixclock()
