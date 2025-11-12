@@ -1,0 +1,2 @@
+# pycryptodome checksum & filename - run ./update_pycryptodome.sh to update
+5a905f0f4237b79aefee47f3e04568db2ecb70c55dd7cb118974c5260aa9e285  v3.23.0.tar.gz

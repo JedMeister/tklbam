@@ -7,6 +7,11 @@ HOST_ARCH=$(dpkg --print-architecture)
 
 export LD_LIBRARY_PATH="$DEPROOT/bin"
 
+APP=$(basename "$0")
+info() { echo "[$APP] INFO: $*"; }
+fatal() { echo "[$APP] ERROR: $*" >&2; exit 1; }
+ch_dir() { cd "$1" || fatal "cd $1 failed"; }
+
 mkdir -p "$DEPROOT" "$TMP"
 
 pypy_arch=
@@ -16,34 +21,72 @@ case $HOST_ARCH in
     arm64)
         pypy_arch="aarch64";;
     *)
-        echo "ERROR: $HOST_ARCH unsupported" >&2
-        exit 1;;
+        fatal "$HOST_ARCH unsupported";;
 esac
 
 read -r pypy_checksum pypy_archive <<< "$( \
     sed -n "/pypy2\.7.*$pypy_arch/{s|<*.*>||;p;q;}" "checksums.txt" \
 )"
 
-cd "$TMP" || exit 1
+ch_dir "$TMP"
 
-wget "https://downloads.python.org/pypy/$pypy_archive"
+curl --remote-name "https://downloads.python.org/pypy/$pypy_archive"
 
 if [[ $(sha256sum "$pypy_archive") != "$pypy_checksum"*"$pypy_archive" ]]; then
-    echo "ERROR: $pypy_archive checksum mismatch" >&2
-    exit 1
+    fatal "$pypy_archive checksum mismatch"
 fi
 
-echo "unpacking $pypy_archive..."
+info "unpacking $pypy_archive..."
 tar -xf "$pypy_archive" --transform "s|^${pypy_archive%.tar.bz2}/||" -C "$DEPROOT"
 
+info "cloning TurnKey repos"
 while IFS= read -r line; do
     pkg="${line%:*}"
     commit_id="${line##*:}"
-
     git clone "https://github.com/turnkeylinux/$pkg"
-    cd "$pkg" || exit 1
+    ch_dir "$pkg"
     git checkout "$commit_id"
     "$LD_LIBRARY_PATH/pypy" setup.py build
-    cd "$TMP" || exit 1
+    ch_dir "$TMP"
     mv "$pkg/build/lib"*/* "$DEPROOT/site-packages"
 done < "$BASE_DIR/dep-commit-ids"
+
+info "Downloading and verifying pycryptodome source tarball"
+url=https://github.com/Legrandin/pycryptodome
+latest_pycrypto_url=$( \
+    curl --location --silent --output /dev/null \
+        --write-out "%{url_effective}\n" "$url/releases/latest" \
+)
+latest_pycrypto="${latest_pycrypto_url##*/}"
+
+read -r pycrypto_checksum pycrypto_archive <<< "$( \
+    sed -En "\|^[a-z0-9]+|p" "$BASE_DIR/pycryptodome.checksum.txt" \
+)"
+verified_pycrypto="${pycrypto_archive//.tar.gz}"
+
+if [[ "$latest_pycrypto" != "$verified_pycrypto" ]]; then
+    cat <<EOF >&2
+WARNING: a new pycryptodome version is available
+         - verified version: $verified_pycrypto
+         - latest version: $latest_pycrypto
+Please run ./update_pycryptodome.sh to update to the latest version
+See also: https://github.com/Legrandin/pycryptodome/releases
+EOF
+fi
+
+url=https://github.com/Legrandin/pycryptodome/archive/refs/tags
+info "downloading cryptodome source: $verified_pycrypto"
+curl --remote-name --location "$url/$pycrypto_archive"
+if [[ $(sha256sum "$pycrypto_archive") \
+    != "$pycrypto_checksum"*"$pycrypto_archive" ]]; then
+        fatal "$pycrypto_archive checksum mismatch"
+fi
+
+build_dir="pycryptodome-${verified_pycrypto#v}"
+info "Unpacking $pycrypto_archive and building pycryptodome $verified_pycrypto"
+tar xf "$pycrypto_archive"
+ch_dir "$build_dir"
+"$LD_LIBRARY_PATH/pypy" setup.py build
+ch_dir "$TMP"
+mv "$build_dir/build/lib"*/* "$DEPROOT/site-packages"
+info "TKLBAM dependencies built successfully"
