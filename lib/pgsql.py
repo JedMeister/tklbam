@@ -69,7 +69,7 @@ def restoredb(dbdump, dbname, tlimits=[]):
     os.chdir(dbdump)
 
     try:
-        command = "tar c %s 2>/dev/null" % " ".join(manifest)
+        command = "tar c %s --to-stdout 2>/dev/null" % " ".join(manifest)
         command += " | pg_restore --create --dbname=postgres --format=tar"
         for (table, sign) in tlimits:
             if sign:

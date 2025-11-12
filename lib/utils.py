@@ -68,7 +68,7 @@ def move(src, dst):
 def apply_overlay(src, dst, olist_path):
     orig_cwd = os.getcwd()
     os.chdir(src)
-    executil.getoutput("tar --create --files-from=%s | tar --extract --directory %s" %
+    executil.getoutput("tar --create --files-from=%s --to-stdout | tar --extract --directory %s" %
                        (olist_path, executil.mkarg(dst)))
 
     os.chdir(orig_cwd)
