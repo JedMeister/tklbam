@@ -52,7 +52,8 @@ in several ways:
 
 Also, if TKLBAM is linked to the Hub you can:
 
-- Download a profile for another TurnKey system with --force-profile=codename (e.g., "core")
+- Download a profile for another TurnKey system with
+        --force-profile=codename-version-codename (e.g., "core-18.1-bookworm")
 - Download the all-purpose generic profile with --force-profile=generic
 
 Run "tklbam-init --help" for further details.
