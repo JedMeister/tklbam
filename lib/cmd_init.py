@@ -105,13 +105,13 @@ def fatal(e):
     sys.exit(1)
 
 def usage(e=None):
-    from paged import stdout
+    from pydoc import pager
 
     if e:
-        print >> stdout, "error: " + str(e)
+        output = "error: " + str(e) + "\n"
 
-    print >> stdout, "Usage: %s [ API-KEY ]" % sys.argv[0]
-    print >> stdout, __doc__.strip()
+    output = output + "Usage: %s [ API-KEY ]" % sys.argv[0] + "\n"
+    pager(output + __doc__.strip())
     sys.exit(1)
 
 def main():

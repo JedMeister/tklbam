@@ -155,20 +155,23 @@ PATH_LOGFILE = path_global_or_local("/var/log/tklbam-backup", registry.path.back
 PATH_PIDLOCK = path_global_or_local("/var/run/tklbam-backup.pid", registry.path.backup_pid)
 
 def usage(e=None):
-    from paged import stdout
+    from pydoc import pager
+
+    output = ""
 
     if e:
-        print >> stdout, "error: " + str(e)
+        output = "error: " + str(e) + "\n"
 
-    print >> stdout, "Usage: %s [ -options ] [ override ... ]" % sys.argv[0]
+    output = output + "Usage: %s [ -options ] [ override ... ]" % sys.argv[0] + "\n"
     tpl = Template(__doc__.strip())
     conf = Conf()
-    print >> stdout, tpl.substitute(CONF_PATH=conf.paths.conf,
+    output = output + tpl.substitute(CONF_PATH=conf.paths.conf,
                                     CONF_OVERRIDES=conf.paths.overrides,
                                     CONF_VOLSIZE=conf.volsize,
                                     CONF_FULL_BACKUP=conf.full_backup,
                                     CONF_S3_PARALLEL_UPLOADS=conf.s3_parallel_uploads,
                                     LOGFILE=PATH_LOGFILE)
+    pager(output)
     sys.exit(1)
 
 def warn(e):

@@ -266,17 +266,19 @@ def fatal(e):
     sys.exit(1)
 
 def usage(e=None):
-    from paged import stdout
+    from pydoc import pager
+
+    output = ""
 
     if e:
-        print >> stdout, "error: " + str(e)
+        output = "error: " + str(e) + "\n"
 
-    print >> stdout, "Usage: %s [ -options ] <hub-backup>" % sys.argv[0]
-    print >> stdout, "Usage: %s [ -options ] --address=<address> --keyfile=path/to/key.escrow" % sys.argv[0]
+    output = output + "Usage: %s [ -options ] <hub-backup>" % sys.argv[0] + "\n"
+    output = output + "Usage: %s [ -options ] --address=<address> --keyfile=path/to/key.escrow" % sys.argv[0] + "\n"
 
     tpl = Template(__doc__.strip())
     conf = Conf()
-    print >> stdout, tpl.substitute(CONF_PATH=conf.paths.conf,
+    pager(output + tpl.substitute(CONF_PATH=conf.paths.conf,
                                     CONF_RESTORE_CACHE_SIZE=conf.restore_cache_size,
                                     CONF_RESTORE_CACHE_DIR=conf.restore_cache_dir)
 

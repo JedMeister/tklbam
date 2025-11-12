@@ -100,13 +100,15 @@ class Error(Exception):
     pass
 
 def usage(e=None):
-    from paged import stdout
+    from pydoc import pager
+
+    output = ""
 
     if e:
-        print >> stdout, "error: " + str(e)
+        output = "error: " + str(e) + "\n"
 
-    print >> stdout, "Syntax: %s [ -options ] output/profile/ <conf>" % sys.argv[0]
-    print >> stdout, __doc__.strip()
+    output = output + "Syntax: %s [ -options ] output/profile/ <conf>" % sys.argv[0] + "\n"
+    pager(output + __doc__.strip())
     sys.exit(1)
 
 def fatal(e):
