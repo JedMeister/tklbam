@@ -11,6 +11,7 @@ Build-Depends:
  librsync-dev (>= 0.9.6),
  libssl-dev,
  libgmp-dev,
+ turnkey-pypy2,
 Standards-Version: 4.0.0
 
 Package: tklbam
@@ -20,6 +21,7 @@ Depends:
  ${misc:Depends},
  gnupg,
  ntpsec-ntpdate,
+ turnkey-pypy2,
  gpg (>= 2.2.12),
  tklbam-squid | squid-openssl | squid,
 Description: TurnKey GNU/Linux Backup and Migration agent

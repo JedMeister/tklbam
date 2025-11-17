@@ -4,8 +4,9 @@ BASE_DIR="$PWD"
 DEPROOT="$BASE_DIR/lib/deps"
 TMP="$BASE_DIR/debian/tmp/tklbam-deps"
 HOST_ARCH=$(dpkg --print-architecture)
+PYPY_DIR=/usr/lib/tklbam-pypy2
 
-export LD_LIBRARY_PATH="$DEPROOT/bin"
+export LD_LIBRARY_PATH="$PYPY_DIR/bin"
 
 APP=$(basename "$0")
 info() { echo "[$APP] INFO: $*"; }
@@ -14,30 +15,7 @@ ch_dir() { cd "$1" || fatal "cd $1 failed"; }
 
 mkdir -p "$DEPROOT" "$TMP"
 
-pypy_arch=
-case $HOST_ARCH in
-    amd64)
-        pypy_arch="linux64";;
-    arm64)
-        pypy_arch="aarch64";;
-    *)
-        fatal "$HOST_ARCH unsupported";;
-esac
-
-read -r pypy_checksum pypy_archive <<< "$( \
-    sed -n "/pypy2\.7.*$pypy_arch/{s|<*.*>||;p;q;}" "checksums.txt" \
-)"
-
 ch_dir "$TMP"
-
-curl --remote-name "https://downloads.python.org/pypy/$pypy_archive"
-
-if [[ $(sha256sum "$pypy_archive") != "$pypy_checksum"*"$pypy_archive" ]]; then
-    fatal "$pypy_archive checksum mismatch"
-fi
-
-info "unpacking $pypy_archive..."
-tar -xf "$pypy_archive" --transform "s|^${pypy_archive%.tar.bz2}/||" -C "$DEPROOT"
 
 info "cloning TurnKey repos"
 while IFS= read -r line; do
