@@ -23,5 +23,6 @@ Depends:
  ntpsec-ntpdate,
  turnkey-pypy2,
  gpg (>= 2.2.12),
+ tar,
  tklbam-squid | squid-openssl | squid,
 Description: TurnKey GNU/Linux Backup and Migration agent
