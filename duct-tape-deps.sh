@@ -80,5 +80,5 @@ tar xf "$pycrypto_archive"
 ch_dir "$build_dir"
 "$LD_LIBRARY_PATH/pypy" setup.py build
 ch_dir "$TMP"
-mv "$build_dir/build/lib"*/* "$DEPROOT/"
+mv "$build_dir/build/lib"*/* "$DEPROOT_LIB/"
 info "TKLBAM dependencies built successfully"
