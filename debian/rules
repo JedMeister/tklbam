@@ -9,6 +9,10 @@ deproot=$(progname)/deproot
 tmp=debian/tmp
 
 %:
+	if ! mount | grep -q /proc; then \
+		@echo "### ERROR: /proc must be mounted"; \
+		exit 1; \
+	fi
 	dh $@
 
 execute_before_dh_clean:
