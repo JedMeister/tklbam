@@ -11,11 +11,25 @@ Build-Depends:
  librsync-dev (>= 0.9.6),
  libssl-dev,
  libgmp-dev,
- turnkey-pypy2,
+ turnkey-pypy2 | turnkey-pypy2-full,
 Standards-Version: 4.0.0
 
 Package: tklbam
 Architecture: any
+Conflicts:
+ tklbam-duplicity,
+ tklbam-python-boto,
+ turnkey-pylib,
+ python-pycurl,
+ pycurl-wrapper,
+ tklbam (<= 1.4.7),
+Replaces:
+ tklbam-duplicity,
+ tklbam-python-boto,
+ turnkey-pylib,
+ python-pycurl,
+ pycurl-wrapper,
+ tklbam (<= 1.4.7),
 Depends:
  ca-certificates,
  ${misc:Depends},
