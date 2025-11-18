@@ -1,19 +1,22 @@
 #!/bin/bash -eu
 
 BASE_DIR="$PWD"
-DEPROOT="$BASE_DIR/lib/deps"
+DEPROOT_LIB="$BASE_DIR/lib/deps/site-packages"
+DEPROOT_BIN="$BASE_DIR/bin"
 TMP="$BASE_DIR/debian/tmp/tklbam-deps"
-HOST_ARCH=$(dpkg --print-architecture)
 PYPY_DIR=/usr/lib/tklbam-pypy2
 
-export LD_LIBRARY_PATH="$PYPY_DIR/bin"
+PYPY_BIN="$PYPY_DIR/bin"
+PYPY_CMD="$PYPY_BIN/pypy"
+
+export LD_LIBRARY_PATH="$PYPY_BIN"
 
 APP=$(basename "$0")
 info() { echo "[$APP] INFO: $*"; }
 fatal() { echo "[$APP] ERROR: $*" >&2; exit 1; }
 ch_dir() { cd "$1" || fatal "cd $1 failed"; }
 
-mkdir -p "$DEPROOT" "$TMP"
+mkdir -p "$TMP" "$DEPROOT_LIB" "$DEPROOT_BIN"
 
 ch_dir "$TMP"
 
@@ -23,10 +26,21 @@ while IFS= read -r line; do
     commit_id="${line##*:}"
     git clone "https://github.com/turnkeylinux/$pkg"
     ch_dir "$pkg"
-    git checkout "$commit_id"
-    "$LD_LIBRARY_PATH/pypy" setup.py build
+    if [[ "$commit_id" != "$(git rev-parse HEAD)" ]]; then
+        echo "WARNING: saved commit id for $pkg is NOT HEAD" >&2
+        echo "         please update 'dep-commit-ids' to use latest" >&2
+        git checkout "$commit_id"
+    fi
+    "$PYPY_CMD" setup.py build
     ch_dir "$TMP"
-    mv "$pkg/build/lib"*/* "$DEPROOT/site-packages"
+    mv "$pkg/build/lib"*/* "$DEPROOT_LIB"
+    if [[ -d "$pkg/build/bin" ]]; then
+        for file in "$pkg/build/bin/"*; do
+            if [[ -x "$file" ]]; then
+                mv "$file" "$DEPROOT_BIN/"
+            fi
+        done
+    fi
 done < "$BASE_DIR/dep-commit-ids"
 
 info "Downloading and verifying pycryptodome source tarball"
@@ -66,5 +80,5 @@ tar xf "$pycrypto_archive"
 ch_dir "$build_dir"
 "$LD_LIBRARY_PATH/pypy" setup.py build
 ch_dir "$TMP"
-mv "$build_dir/build/lib"*/* "$DEPROOT/site-packages"
+mv "$build_dir/build/lib"*/* "$DEPROOT/"
 info "TKLBAM dependencies built successfully"
