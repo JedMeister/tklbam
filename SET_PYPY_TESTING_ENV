@@ -4,7 +4,7 @@
 # NOTE: 'source' this file - DON'T try to execute it
 # useful for testing py2 commands in interactive python prompt
 
-_PYPY_BIN=/usr/lib/tklbam/deps/bin
+_PYPY_BIN=/usr/lib/tklbam-pypy2/bin
 
 if [[ "$PATH" != *"$_PYPY_BIN"* ]]; then
     export PATH="$PATH:$_PYPY_BIN"
@@ -14,7 +14,8 @@ else
     echo "pypy already in PATH"
 fi
 
-_PYPY_LD_LIB=/turnkey/public/trixie-tklbam-deb/usr/lib/tklbam/deps/lib
+# lib path is the same as bin path
+_PYPY_LD_LIB="$_PYPY_BIN"
 
 if [[ -z "$LD_LIBRARY_PATH" ]]; then
     export LD_LIBRARY_PATH="$_PYPY_LD_LIB"
@@ -29,3 +30,5 @@ else
 fi
 
 unset _PYPY_BIN _PYPY_LD_LIB
+
+# vim:ft=bash
