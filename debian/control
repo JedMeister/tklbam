@@ -38,5 +38,11 @@ Depends:
  turnkey-pypy2,
  gpg (>= 2.2.12),
  tar,
- tklbam-squid | squid-openssl | squid,
+ tklbam-squid,
 Description: TurnKey GNU/Linux Backup and Migration agent
+ A backup and data migration tool to backup and/or migrate
+ files, directories and database data (mysql/maridb &
+ postgresql).
+ .
+ Primarily TKLBAM is intended for use on TurnKey GNU/Linux
+ but it should also work on any Debian based OS.
