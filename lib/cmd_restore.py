@@ -281,6 +281,7 @@ def usage(e=None):
     pager(output + tpl.substitute(CONF_PATH=conf.paths.conf,
                                     CONF_RESTORE_CACHE_SIZE=conf.restore_cache_size,
                                     CONF_RESTORE_CACHE_DIR=conf.restore_cache_dir)
+    )
 
     sys.exit(1)
 
