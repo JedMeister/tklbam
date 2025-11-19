@@ -1,4 +1,4 @@
-#!/usr/lib/tklbam/deps/bin/python2
+#!/usr/lib/tklbam-pypy2/bin/pypy
 # 
 # Copyright (c) 2010-2012 Liraz Siri <liraz@turnkeylinux.org>
 # 

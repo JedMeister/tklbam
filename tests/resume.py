@@ -1,4 +1,4 @@
-#!/usr/lib/tklbam/deps/bin/python2
+#!/usr/lib/tklbam-pypy2/bin/pypy
 import os
 import sys
 import time
