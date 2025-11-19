@@ -14,4 +14,3 @@ contrib/ez-apt-install.sh           => /usr/share/tklbam/contrib/ez-apt-install.
 
 # move files/dirs
 lib/*                               /usr/lib/tklbam/
-

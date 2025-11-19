@@ -20,6 +20,8 @@ ch_dir() { cd "$1" || fatal "cd $1 failed"; }
 
 mkdir -p "$TMP" "$DEPROOT_LIB" "$DEPROOT_BIN"
 
+ls -la "$DEPROOT_LIB"
+
 ch_dir "$TMP"
 
 info "cloning TurnKey repos"
