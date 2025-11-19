@@ -1,13 +1,15 @@
 #!/bin/bash -eu
 
 BASE_DIR="$PWD"
-DEPROOT_LIB="$BASE_DIR/lib/deps/site-packages"
-DEPROOT_BIN="$BASE_DIR/bin"
-TMP="$BASE_DIR/debian/tmp/tklbam-deps"
-PYPY_DIR=/usr/lib/tklbam-pypy2
 
+PYPY_DIR=/usr/lib/tklbam-pypy2
 PYPY_BIN="$PYPY_DIR/bin"
 PYPY_CMD="$PYPY_BIN/pypy"
+
+DEPROOT_LIB="$PYPY_DIR/site-packages"
+DEPROOT_BIN="$BASE_DIR/bin"
+
+TMP="$BASE_DIR/debian/tmp/tklbam-deps"
 
 export LD_LIBRARY_PATH="$PYPY_BIN"
 
