@@ -6,7 +6,7 @@ PYPY_DIR=/usr/lib/tklbam-pypy2
 PYPY_BIN="$PYPY_DIR/bin"
 PYPY_CMD="$PYPY_BIN/pypy"
 
-DEPROOT_LIB="$PYPY_DIR/site-packages"
+DEPROOT_LIB="$BASE_DIR/site-packages"
 DEPROOT_BIN="$BASE_DIR/bin"
 
 TMP="$BASE_DIR/debian/tmp/tklbam-deps"
@@ -19,8 +19,6 @@ fatal() { echo "[$APP] ERROR: $*" >&2; exit 1; }
 ch_dir() { cd "$1" || fatal "cd $1 failed"; }
 
 mkdir -p "$TMP" "$DEPROOT_LIB" "$DEPROOT_BIN"
-
-ls -la "$DEPROOT_LIB"
 
 ch_dir "$TMP"
 

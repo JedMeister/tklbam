@@ -14,3 +14,4 @@ contrib/ez-apt-install.sh           => /usr/share/tklbam/contrib/ez-apt-install.
 
 # move files/dirs
 lib/*                               /usr/lib/tklbam/
+site-packages/*                     /usr/lib/tklbam-pypy2/site-packages/
