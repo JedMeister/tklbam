@@ -10,7 +10,7 @@ tmp=debian/tmp
 
 %:
 	if ! mount | grep -q /proc; then \
-		@echo "### ERROR: /proc must be mounted"; \
+		echo "### ERROR: /proc must be mounted"; \
 		exit 1; \
 	fi
 	dh $@
