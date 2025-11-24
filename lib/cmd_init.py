@@ -28,11 +28,11 @@ Options:
 
     --force                        Force re-initialization with new API-KEY.
 
-    --force-profile=PROFILE_ID     Force a specific backup profile 
-                                   (e.g., "core", "turnkey-core-13.0-wheezy-amd64")
+    --force-profile=PROFILE_ID     Force a specific backup profile. E.g.:
+                                   "core-18.1-bookworm"; or "turnkey-lamp-18.1-bookworm-amd64"
 
                                    Without --force-profile the profile_id is 
-                                   automatically detected.
+                                   automatically detected - if it exists.
 
     --force-profile=empty          "empty" is a special profile_id value that creates an empty
                                    backup profile. Backup configurations will only be taken 
