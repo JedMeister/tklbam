@@ -107,6 +107,7 @@ def fatal(e):
 def usage(e=None):
     from pydoc import pager
 
+    output = ""
     if e:
         output = "error: " + str(e) + "\n"
 
