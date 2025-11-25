@@ -35,7 +35,7 @@ Depends:
  ${misc:Depends},
  gnupg,
  ntpsec-ntpdate,
- turnkey-pypy2,
+ turnkey-pypy2 | turnkey-pypy2-full | turnkey-pypy2-dbg,
  gpg (>= 2.2.12),
  tar,
  tklbam-squid,
