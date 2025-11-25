@@ -233,7 +233,7 @@ def main():
                     fatal("--dump=%s is not an empty directory" % dump_path)
 
             else:
-                os.mkdir(dump_path)
+                os.makedirs(dump_path)
 
             opt_disable_resume = True
 
