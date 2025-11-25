@@ -42,6 +42,8 @@ while IFS= read -r line; do
                 mv "$file" "$DEPROOT_BIN/"
             fi
         done
+    elif [[ "$pkg" == "tklbam-duplicity" ]]; then
+        mv "$pkg/bin/duplicity" "$DEPROOT_BIN"
     fi
 done < "$BASE_DIR/dep-commit-ids"
 
