@@ -97,15 +97,15 @@ class Backup:
             self._log("  " + " ".join(new_packages))
             self._log("  EOF\n")
 
-        fh = file(dest, "w")
-        for package in new_packages:
-            print >> fh, package
+        with open(dest, "w") as fob:
+            for package in new_packages:
+                fob.write(package + "\n")
 
-        fh.close()
 
     def _write_whatchanged(self, dest, dest_olist, dirindex, dirindex_conf,
                            overrides=[]):
-        paths = read_paths(file(dirindex_conf))
+        with open(dirindex_conf) as fob:
+            paths = read_paths(fob)
         paths += overrides
 
         changes = whatchanged(dirindex, paths)
@@ -113,7 +113,8 @@ class Backup:
 
         changes.tofile(dest)
         olist = [ change.path for change in changes if change.OP == 'o' ]
-        file(dest_olist, "w").writelines((path + "\n" for path in olist))
+        with open(dest_olist, "w") as fob:
+            fob.writelines((path + "\n" for path in olist))
 
         if self.verbose:
             if changes:
@@ -248,7 +249,9 @@ class Backup:
             fpaths= _fpaths(extras_paths.path)
 
             if not skip_files:
-                fsdelta_olist = file(extras_paths.fsdelta_olist).read().splitlines()
+                with open(extras_paths.fsdelta_olist) as fob:
+                    fsdelta_olist = fob.read().splitlines()
+
                 fpaths += _filter_deleted(fsdelta_olist)
 
             size = sum([ os.lstat(fpath).st_size

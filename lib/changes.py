@@ -190,7 +190,8 @@ class Changes(list):
         return cls(changes)
 
     def tofile(self, f):
-        file(f, "w").writelines((str(change) + "\n" for change in self))
+        with open(f, "w") as fob:
+            fob.writelines((str(change) + "\n" for change in self))
 
     def deleted(self, optimized=True):
         for change in self:
