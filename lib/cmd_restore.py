@@ -347,7 +347,8 @@ def main():
             if not isfile(val):
                 fatal("keyfile %s does not exist or is not a file" % `val`)
 
-            opt_key = file(val).read()
+            with open(val) as fob:
+                opt_key = fob.read()
             try:
                 keypacket.fingerprint(opt_key)
             except keypacket.Error:
@@ -476,79 +477,76 @@ def main():
 
     update_profile(conf.force_profile, strict=False)
 
-    if not (opt_simulate or opt_debug):
-        log_fh = file(opt_logfile, "a")
+    with open(opt_logfile, "a") as log_fh:
+        if not (opt_simulate or opt_debug):
+            log_fh.write("\n\n" + fmt_timestamp() + "\n")
 
-        print >> log_fh
-        print >> log_fh, "\n" + fmt_timestamp()
+            log_fh.flush()
 
-        log_fh.flush()
+            trap = UnitedStdTrap(usepty=True, transparent=(False if silent else True), tee=log_fh)
+        else:
+            trap = None
 
-        trap = UnitedStdTrap(usepty=True, transparent=(False if silent else True), tee=log_fh)
-    else:
-        trap = None
+        try:
+            hooks.restore.pre()
 
-    try:
-        hooks.restore.pre()
+            if not backup_extract_path:
+                backup_extract_path = get_backup_extract()
 
-        if not backup_extract_path:
-            backup_extract_path = get_backup_extract()
+            extras_paths = backup.ExtrasPaths(backup_extract_path)
 
-        extras_paths = backup.ExtrasPaths(backup_extract_path)
+            if not isdir(extras_paths.path):
+                fatal("missing %s directory - this doesn't look like a system backup" % extras_paths.path)
 
-        if not isdir(extras_paths.path):
-            fatal("missing %s directory - this doesn't look like a system backup" % extras_paths.path)
+            os.environ['TKLBAM_BACKUP_EXTRACT_PATH'] = backup_extract_path
 
-        os.environ['TKLBAM_BACKUP_EXTRACT_PATH'] = backup_extract_path
+            if not silent:
+                print fmt_title("Restoring system from backup extract at " + backup_extract_path)
 
-        if not silent:
-            print fmt_title("Restoring system from backup extract at " + backup_extract_path)
+            restore = Restore(backup_extract_path, limits=opt_limits, rollback=not no_rollback, simulate=opt_simulate)
 
-        restore = Restore(backup_extract_path, limits=opt_limits, rollback=not no_rollback, simulate=opt_simulate)
+            if restore.conf:
+                os.environ['TKLBAM_RESTORE_PROFILE_ID'] = restore.conf.profile_id
+            hooks.restore.inspect(restore.extras.path)
 
-        if restore.conf:
-            os.environ['TKLBAM_RESTORE_PROFILE_ID'] = restore.conf.profile_id
-        hooks.restore.inspect(restore.extras.path)
+            if opt_debug:
+                print """\
+      The --debug option has (again) dropped you into an interactive shell so that
+      you can explore the state of the system just before restore. The current
+      working directory contains the backup extract.
 
-        if opt_debug:
-            print """\
-  The --debug option has (again) dropped you into an interactive shell so that
-  you can explore the state of the system just before restore. The current
-  working directory contains the backup extract.
+      To exit from the shell and continue the restore run "exit 0".
+      To exit from the shell and abort the restore run "exit 1".
+    """
+                os.chdir(backup_extract_path)
+                executil.system(os.environ.get("SHELL", "/bin/bash"))
+                os.chdir('/')
 
-  To exit from the shell and continue the restore run "exit 0".
-  To exit from the shell and abort the restore run "exit 1".
-"""
-            os.chdir(backup_extract_path)
-            executil.system(os.environ.get("SHELL", "/bin/bash"))
-            os.chdir('/')
+            if not skip_packages:
+                restore.packages()
 
-        if not skip_packages:
-            restore.packages()
+            if not skip_files:
+                restore.files()
 
-        if not skip_files:
-            restore.files()
+            if not skip_database:
+                restore.database()
 
-        if not skip_database:
-            restore.database()
+            print
+            hooks.restore.post()
 
-        print
-        hooks.restore.post()
+        except:
+            if trap:
+                log_fh.write("\n")
+                traceback.print_exc(file=log_fh)
 
-    except:
-        if trap:
-            print >> log_fh
-            traceback.print_exc(file=log_fh)
+            raise
 
-        raise
+        finally:
+            if trap:
+                sys.stdout.flush()
+                sys.stderr.flush()
 
-    finally:
-        if trap:
-            sys.stdout.flush()
-            sys.stderr.flush()
-
-            trap.close()
-            log_fh.close()
+                trap.close()
 
     if not silent:
         print "We're done. You may want to reboot now to reload all service configurations."

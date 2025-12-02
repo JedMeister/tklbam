@@ -256,9 +256,8 @@ class Backups:
         content = base64.urlsafe_b64decode(str(response['archive_content']))
 
         fd, archive_path = tempfile.mkstemp(prefix="archive.")
-        fh = os.fdopen(fd, "w")
-        fh.write(content)
-        fh.close()
+        with os.fdopen(fd, "w") as fob:
+            fob.write(content)
 
         return ProfileArchive(profile_id, archive_path, archive_timestamp)
 

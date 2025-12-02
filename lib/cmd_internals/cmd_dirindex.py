@@ -58,8 +58,11 @@ def main():
     paths = args[1:]
     
     if opt_input:
-        fh = file(opt_input) if opt_input != '-' else sys.stdin
-        paths = dirindex.read_paths(fh) + paths
+        if opt_input != '-':
+            with open(opt_input) as fob:
+                paths = dirindex.read_paths(fob) + paths
+        else:
+            paths = dirindex.read_paths(sys.stdin) + paths
 
     if opt_create:
         dirindex.create(path_index, paths)

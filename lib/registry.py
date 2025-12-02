@@ -85,18 +85,21 @@ Run "tklbam-init --help" for further details.
         if s is UNDEFINED:
             if not exists(path):
                 return None
-
-            return file(path).read().rstrip()
+            with open(path) as fob:
+                return fob.read().rstrip()
 
         else:
             if s is None:
                 if exists(path):
                     os.remove(path)
             else:
-                fh = file(path, "w")
-                os.chmod(path, 0600)
-                print >> fh, s
-                fh.close()
+                old_umask = os.umask(0)
+                try:
+                    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0600)
+                    with os.fdopen(fd, 'w') as fob:
+                        fob.write(s + "\n")
+                finally:
+                    os.umask(old_umask)
 
     @classmethod
     def _file_tuple(cls, path, t=UNDEFINED):
@@ -175,19 +178,23 @@ Run "tklbam-init --help" for further details.
             self.profile = None
             os.makedirs(self.path.profile)
 
+            def profile_stamp():
+                with open(self.path.profile.stamp, "w"):
+                    pass
+
             if val == self.EMPTY_PROFILE:
                 self._file_str(self.path.profile.profile_id, val)
-                file(self.path.profile.stamp, "w").close()
+                profile_stamp()
 
             elif isdir(str(val)):
                 self.profile = None
                 shutil.copytree(val, self.path.profile)
                 self._file_str(self.path.profile.profile_id, self._custom_profile_id(val))
-                file(self.path.profile.stamp, "w").close()
+                profile_stamp()
 
             else:
                 profile_archive.extract(self.path.profile)
-                file(self.path.profile.stamp, "w").close()
+                profile_stamp()
                 os.utime(self.path.profile.stamp, (0, profile_archive.timestamp))
                 self._file_str(self.path.profile.profile_id, profile_archive.profile_id)
 

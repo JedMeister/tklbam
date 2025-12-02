@@ -37,8 +37,8 @@ PATH_DEBIAN_CNF = "/etc/mysql/debian.cnf"
 def _mysql_opts(opts=[], defaults_file=None, **conf):
     def isreadable(path):
         try:
-            file(path)
-            return True
+            with open(path):
+                return True
         except:
             return False
 
@@ -126,16 +126,19 @@ class MyFS_Writer(MyFS):
             if not exists(self.paths):
                 os.mkdir(self.paths)
 
-            print >> file(self.paths.init, "w"), sql
+            with open(self.paths.init, "w") as fob:
+                fob.write(sql + "\n")
             self.name = name
 
         def add_view_pre(self, name, sql):
             view = self.View(self.paths.views, name)
-            print >> file(view.paths.pre, "w"), sql
+            with open(view.paths.pre, "w") as fob:
+                fob.write(sql + "\n")
 
         def add_view_post(self, name, sql):
             view = self.View(self.paths.views, name)
-            print >> file(view.paths.post, "w"), sql
+            with open(view.paths.post, "w") as fob:
+                fob.write(sql + "\n")
 
     class Table(MyFS.Table):
         def __init__(self, database, name, sql):
@@ -143,7 +146,8 @@ class MyFS_Writer(MyFS):
             if not exists(self.paths):
                 os.makedirs(self.paths)
 
-            print >> file(self.paths.init, "w"), sql
+            with open(self.paths.init, "w") as fob:
+                fob.write(sql + "\n")
             if exists(self.paths.triggers):
                 os.remove(self.paths.triggers)
 
@@ -291,20 +295,23 @@ $sql
             def pre(self):
                 if not exists(self.paths.pre):
                     return
-                sql = file(self.paths.pre).read().strip()
+                with open(self.paths.pre) as fob:
+                    sql = fob.read().strip()
                 return Template(self.TPL_PRE).substitute(name=self.name, sql=sql)
             pre = property(pre)
 
             def post(self):
                 if not exists(self.paths.post):
                     return
-                sql = file(self.paths.post).read().strip()
+                with open(self.paths.post) as fob:
+                    sql = fob.read().strip()
                 return Template(self.TPL_POST).substitute(name=self.name, sql=sql)
             post = property(post)
             
         def __init__(self, myfs, fname):
             self.paths = self.Paths(join(myfs.path, fname))
-            self.sql_init = file(self.paths.init).read()
+            with open(self.paths.init) as fob:
+                self.sql_init = fob.read()
             self.name = _match_name(self.sql_init)
             self.myfs = myfs
 
@@ -391,7 +398,8 @@ DELIMITER ;
 
         def __init__(self, database, fname):
             self.paths = self.Paths(join(database.paths.tables, fname))
-            self.sql_init = file(self.paths.init).read()
+            with open(self.paths.init) as fob:
+                self.sql_init = fob.read()
             self.name = _match_name(self.sql_init)
             self.database = database
 
@@ -399,8 +407,9 @@ DELIMITER ;
             return "Table(%s)" % `self.paths.path`
 
         def rows(self):
-            for line in file(self.paths.rows).xreadlines():
-                yield line.strip()
+            with open(self.paths.rows) as fob:
+                for line in fob.xreadlines():
+                    yield line.strip()
 
         def has_rows(self):
             if exists(self.paths.rows) and os.lstat(self.paths.rows).st_size != 0:
@@ -412,8 +421,8 @@ DELIMITER ;
         def triggers(self):
             if not exists(self.paths.triggers):
                 return []
-
-            return list(_parse_statements(file(self.paths.triggers), ';;'))
+            with open(self.paths.triggers) as fob:
+                return list(_parse_statements(fob, ';;'))
         triggers = property(triggers)
 
         def tofile(self, fh):
@@ -619,7 +628,8 @@ class MysqlService:
         if not exists(cls.PID_FILE):
             return
 
-        pid = int(file(cls.PID_FILE).read().strip())
+        with open(cls.PID_FILE) as fob:
+            pid = int(fob.read().strip())
         if cls._pid_exists(pid):
             return pid
 

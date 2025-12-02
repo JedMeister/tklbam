@@ -176,12 +176,15 @@ class Changes(list):
 
     @classmethod
     def fromfile(cls, f, paths=None):
-        if f == '-':
-            fh = sys.stdin
-        else:
-            fh = file(f)
 
-        changes = [ Change.parse(line) for line in fh.readlines() ]
+        if f == '-':
+            lines = sys.stdin.readlines()
+        else:
+            with open(f) as fob:
+                lines = fob.readlines()
+
+        changes = [ Change.parse(line) for line in lines ]
+
         if paths:
             pathmap = PathMap(paths)
             changes = [ change for change in changes

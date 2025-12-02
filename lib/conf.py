@@ -20,17 +20,16 @@ class Limits(list):
     @classmethod
     def fromfile(cls, inputfile):
         try:
-            fh = file(inputfile)
+            with open(inputfile) as fob:
+                limits = []
+                for line in fh.readlines():
+                    line = re.sub(r'#.*', '', line).strip()
+                    if not line:
+                        continue
+
+                    limits.append(line)
         except:
             return cls()
-
-        limits = []
-        for line in fh.readlines():
-            line = re.sub(r'#.*', '', line).strip()
-            if not line:
-                continue
-
-            limits.append(line)
 
         def is_legal(limit):
             if cls._is_db_limit(limit):
@@ -166,27 +165,27 @@ class Conf(AttrDict):
         if not exists(self.paths.conf):
             return
 
-        for line in file(self.paths.conf).read().split("\n"):
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
+        with open(self.paths.conf) as fob:
+            for line in fob.read().split("\n"):
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
 
-            try:
-                opt, val = re.split(r'\s+', line, 1)
-            except ValueError:
-                raise self._error("illegal line '%s'" % (line))
+                try:
+                    opt, val = re.split(r'\s+', line, 1)
+                except ValueError:
+                    raise self._error("illegal line '%s'" % (line))
 
-            try:
-                if opt in ('full-backup', 'volsize', 's3-parallel-uploads',
-                           'restore-cache-size', 'restore-cache-dir',
-                           'backup-skip-files', 'backup-skip-packages', 'backup-skip-database', 'force-profile'):
+                try:
+                    if opt in ('full-backup', 'volsize', 's3-parallel-uploads',
+                               'restore-cache-size', 'restore-cache-dir',
+                               'backup-skip-files', 'backup-skip-packages', 'backup-skip-database', 'force-profile'):
 
-                    attrname = opt.replace('-', '_')
-                    setattr(self, attrname, val)
+                        attrname = opt.replace('-', '_')
+                        setattr(self, attrname, val)
 
-                else:
-                    raise self.Error("unknown conf option '%s'" % opt)
+                    else:
+                        raise self.Error("unknown conf option '%s'" % opt)
 
-            except self.Error, e:
-                raise self._error(e)
-
+                except self.Error, e:
+                    raise self._error(e)

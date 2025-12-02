@@ -73,12 +73,14 @@ class BackupConf(AttrDict):
         if not exists(path):
             return None
 
-        d = json.load(file(path))
+        with open(path) as fob:
+            d = json.load(fob)
         return cls(*(d[attr]
                      for attr in ('profile_id', 'overrides', 'skip_files', 'skip_packages', 'skip_database')))
 
     def tofile(self, path):
-        json.dump(dict(self), file(path, "w"))
+        with open(path, "w"):
+            json.dump(dict(self), fob)
 
 class Backup:
     class Error(Exception):

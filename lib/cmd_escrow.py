@@ -86,12 +86,16 @@ def main():
     key = keypacket.fmt(registry.secret, passphrase)
 
     if keyfile == '-':
-        fh = sys.stdout
+        print >> sys.stdout, key
     else:
-        fh = file(keyfile, "w")
-        os.chmod(keyfile, 0600)
-
-    print >> fh, key
+        old_umask = os.umask(0)
+        try:
+            old_umask = os.umask(0)
+            fd = os.open(keyfile, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0600)
+            with os.fdopen(fd, 'w') as fob:
+                fob.write(key + "\n")
+        finally:
+            os.umask(old_umask)
 
 if __name__ == "__main__":
     main()

@@ -34,21 +34,22 @@ def usage(e=None):
     sys.exit(1)
 
 def parse_input(inputfile):
-    packages = []
-    
+
+    def read_packages(fob):
+        packages = []
+        for line in fob.readlines():
+            line = re.sub(r'#.*', '', line).strip()
+            if not line:
+                continue
+
+            packages.append(line)
+        return packages
+
     if inputfile == '-':
-        fh = sys.stdin
+        return read_packages(sys.stdin)
     else:
-        fh = file(inputfile)
-
-    for line in fh.readlines():
-        line = re.sub(r'#.*', '', line).strip()
-        if not line:
-            continue
-
-        packages.append(line)
-
-    return packages
+        with open(inputfile) as fob:
+            return read_packages(fob)
 
 def main():
     try:

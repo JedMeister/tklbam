@@ -119,27 +119,32 @@ class ProfileGenerator:
 
     @staticmethod
     def _get_dirindex(path_dirindex_conf, path_rootfs):
-        paths = dirindex.read_paths(file(path_dirindex_conf))
+        with open(path_dirindex_conf) as fob:
+            paths = dirindex.read_paths(fob)
         paths = [ re.sub(r'^(-?)', '\\1' + path_rootfs, path) 
                   for path in paths ]
 
         tmp = TempFile()
         dirindex.create(tmp.path, paths)
 
-        filtered = [ re.sub(r'^' + path_rootfs, '', line) 
-                            for line in file(tmp.path).readlines() ]
+        with open(tmp.path) as fob:
+            filtered = [
+                re.sub(r'^' + path_rootfs, '', line)
+                for line in fob.readlines()
+            ]
         return "".join(filtered)
 
     @staticmethod
     def _get_packages(path_rootfs):
         def parse_status(path):
             control = ""
-            for line in file(path).readlines():
-                if not line.strip():
-                    yield control
-                    control = ""
-                else:
-                    control += line
+            with open(path)
+                for line in fob.readlines():
+                    if not line.strip():
+                        yield control
+                        control = ""
+                    else:
+                        control += line
 
             if control.strip():
                 yield control
@@ -162,18 +167,23 @@ class ProfileGenerator:
 
         paths = ProfilePaths(path_output)
 
-
-        file(paths.dirindex_conf, "w").write(("\n".join(conf_paths) + "\n") 
-                                             if conf_paths else "")
+        with open(paths.dirindex_conf, "w") as fob:
+            fob.write(
+                ("\n".join(conf_paths) + "\n")
+                if conf_paths else ""
+            )
 
         if dirindex:
             di = self._get_dirindex(paths.dirindex_conf, rootfs)
-            file(paths.dirindex, "w").write(di)
+            with open(paths.dirindex, "w") as fob:
+                fob.write(di)
 
         if packages:
             packages = self._get_packages(rootfs)
-            file(paths.packages, "w").writelines([ package + "\n"
-                                                   for package in packages ])
+            with open(paths.packages, "w") as fob:
+                fob.writelines(
+                    [package + "\n" for package in packages]
+                )
 
         self.paths = paths
 
@@ -245,7 +255,11 @@ def main():
         os.mkdir(path_output)
 
     try:
-        conf_paths = parse_conf(sys.stdin if path_conf == '-' else file(path_conf))
+        if path_conf == '-':
+            conf_paths = parse_conf(sys.stdin)
+        else:
+            with open(path_conf) as fob:
+                conf_paths = parse_conf(fob)
     except Error, e:
         fatal(e)
 
