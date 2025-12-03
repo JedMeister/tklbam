@@ -3,7 +3,7 @@ from os.path import *
 
 import re
 
-from paths import Paths as _Paths
+from pylib.paths import Paths as _Paths
 import duplicity
 
 class Error(Exception):

@@ -17,17 +17,17 @@ import signal
 import time
 
 import re
-from paths import Paths as _Paths
+from pylib.paths import Paths as _Paths
 
 import shutil
 from string import Template
 from subprocess import Popen, PIPE
 
 from dblimits import DBLimits
-import executil
+from pylib import executil
 
 import stat
-from command import Command
+from pylib.command import Command
 
 class Error(Exception):
     pass

@@ -9,7 +9,7 @@
 # the License, or (at your option) any later version.
 #
 import re
-import executil
+from pylib import executil
 from os.path import *
 
 from utils import AttrDict

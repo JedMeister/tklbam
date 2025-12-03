@@ -17,7 +17,7 @@ from os.path import realpath
 from cliwrapper import CliWrapper
 
 import cmd_internals
-from executil import fmt_command
+from pylib.executil import fmt_command
 
 class CliWrapper(CliWrapper):
     DESCRIPTION = __doc__

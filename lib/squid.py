@@ -1,7 +1,7 @@
 import os
 
 import socket
-import command
+from pylib import command
 
 import signal
 

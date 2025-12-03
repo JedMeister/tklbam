@@ -16,7 +16,7 @@ import re
 import commands
 import shutil
 
-from executil import system, getoutput, getoutput_popen
+from pylib.executil import system, getoutput, getoutput_popen
 
 from dblimits import DBLimits
 

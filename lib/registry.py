@@ -14,7 +14,7 @@
 import os
 import re
 from os.path import *
-from paths import Paths as _Paths
+from pylib.paths import Paths as _Paths
 import json
 
 from datetime import datetime

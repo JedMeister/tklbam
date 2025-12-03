@@ -98,7 +98,7 @@ class Duplicity:
   To exit from the shell and abort this session "exit 1".
 """
 
-            import executil
+            from pylib import executil
             shell = os.environ.get("SHELL", "/bin/bash")
             if shell == "/bin/bash":
                 shell += " --norc"

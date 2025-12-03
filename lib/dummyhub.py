@@ -5,7 +5,7 @@ import re
 import struct
 import base64
 from hashlib import sha1 as sha
-from paths import Paths
+from pylib.paths import Paths
 import pickle
 import glob
 from datetime import datetime

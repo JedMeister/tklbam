@@ -134,7 +134,7 @@ import shutil
 
 from string import Template
 
-from pidlock import PidLock
+from pylib.pidlock import PidLock
 
 import hub
 import backup
@@ -145,7 +145,7 @@ from registry import registry, update_profile, hub_backups
 from conf import Conf
 
 from version import detect_profile_id
-from stdtrap import UnitedStdTrap
+from pylib.stdtrap import UnitedStdTrap
 
 from utils import is_writeable, fmt_title, fmt_timestamp, path_global_or_local
 
@@ -181,7 +181,7 @@ def fatal(e):
     print >> sys.stderr, "error: " + str(e)
     sys.exit(1)
 
-from conffile import ConfFile
+from pylib.conffile import ConfFile
 
 class ServerConf(ConfFile):
     CONF_FILE="/var/lib/hubclient/server.conf"

@@ -94,7 +94,7 @@ import re
 
 import dirindex
 from backup import ProfilePaths
-from temp import TempFile
+from pylib.temp import TempFile
 
 class Error(Exception):
     pass

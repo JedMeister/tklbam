@@ -84,7 +84,7 @@ import base64
 import tempfile
 from datetime import datetime
 
-import executil
+from pylib import executil
 from pycurl_wrapper import API as _API
 from utils import AttrDict
 

@@ -141,9 +141,9 @@ from os.path import *
 from restore import Restore
 import duplicity
 
-from stdtrap import UnitedStdTrap
-from temp import TempDir
-import executil
+from pylib.stdtrap import UnitedStdTrap
+from pylib.temp import TempDir
+from pylib import executil
 
 import hub
 import keypacket

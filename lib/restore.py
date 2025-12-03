@@ -29,7 +29,7 @@ import pgsql
 
 import json
 
-from temp import TempFile
+from pylib.temp import TempFile
 
 class Error(Exception):
     pass

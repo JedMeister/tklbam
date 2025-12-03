@@ -16,7 +16,7 @@ import stat
 import shutil
 
 from datetime import datetime
-from paths import Paths as _Paths
+from pylib.paths import Paths as _Paths
 
 import mysql
 import pgsql

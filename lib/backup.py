@@ -17,7 +17,7 @@ import stat
 import shutil
 import json
 
-from paths import Paths
+from pylib.paths import Paths
 
 from dirindex import read_paths
 from changes import whatchanged

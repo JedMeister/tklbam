@@ -14,7 +14,7 @@
 import sys
 from registry import hub_backups
 import hub
-from retry import retry
+from pylib.retry import retry
 
 @retry(5, backoff=2)
 def get_credentials(hb):
