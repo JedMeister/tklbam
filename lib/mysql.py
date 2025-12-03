@@ -151,15 +151,17 @@ class MyFS_Writer(MyFS):
             if exists(self.paths.triggers):
                 os.remove(self.paths.triggers)
 
-            self.rows_fh = file(self.paths.rows, "w")
+            self.rows_fh = open(self.paths.rows, "w")
             self.name = name
             self.database = database
 
         def add_row(self, sql):
             print >> self.rows_fh, re.sub(r'.*?VALUES \((.*)\);', '\\1', sql)
+            self.rows_fh.flush()
 
         def add_trigger(self, sql):
-            print >> file(self.paths.triggers, "a"), sql + "\n"
+            with open(self.paths.triggers, "a") as fob:
+                print >> fob, sql + "\n"
 
     def __init__(self, outdir, limits=[]):
         self.limits = DBLimits(limits)
@@ -221,13 +223,13 @@ class MyFS_Writer(MyFS):
 
             if re.match(r'^/\*!50003 CREATE.* TRIGGER ', statement, re.DOTALL):
                 table.add_trigger(statement)
-
             elif not table_ignore_inserts and statement.startswith("INSERT INTO"):
                 assert _match_name(statement) == table.name
                 table.add_row(statement)
 
 def mysql2fs(fh, outdir, limits=[], callback=None):
     MyFS_Writer(outdir, limits).fromfile(fh, callback)
+    fh.flush()
 
 def chunkify(elements, delim, maxlen):
     chunk = ""
@@ -359,6 +361,8 @@ $sql
                 if view.pre:
                     print >> fh, "\n" + view.pre
 
+            fh.flush()
+
     class Table(MyFS.Table):
         TPL_CREATE = """\
 SET @saved_cs_client     = @@character_set_client;
@@ -467,6 +471,7 @@ DELIMITER ;
                 for trigger in self.triggers:
                     print >> fh, trigger
                 print >> fh, self.TPL_TRIGGERS_POST
+            fh.flush()
 
     PRE = """\
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -527,10 +532,12 @@ DELIMITER ;
                 print >> fh, "\n" + view.post
 
         print >> fh, self.POST
+        fh.flush()
 
 def fs2mysql(fh, myfs, limits=[], callback=None, skip_extended_insert=False, add_drop_database=False):
 
     MyFS_Reader(myfs, limits, skip_extended_insert, add_drop_database).tofile(fh, callback)
+    fh.flush()
 
 def cb_print(fh=None):
     if not fh:
@@ -586,7 +593,7 @@ def restore(myfs, etc, **kws):
 
     mna = None
     if simulate:
-        mysql_fh = file("/dev/null", "w")
+        mysql_fh = open("/dev/null", "w")
     else:
         if not MysqlService.is_running():
             raise Error("MySQL service not running")
