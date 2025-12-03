@@ -62,23 +62,22 @@ class ConfFile(dict):
         if not self.CONF_FILE or not os.path.exists(self.CONF_FILE):
             return 
 
-        for line in file(self.CONF_FILE).readlines():
-            line = line.rstrip()
+        with open(self.CONF_FILE) as fob:
+            for line in fob.readlines():
+                line = line.rstrip()
 
-            if not line or line.startswith("#"):
-                continue
+                if not line or line.startswith("#"):
+                    continue
 
-            key, val = line.split("=")
-            self[key.strip().lower()] = val.strip()
+                key, val = line.split("=")
+                self[key.strip().lower()] = val.strip()
 
     def write(self):
-        fh = file(self.CONF_FILE, "w")
-        items = self.items()
-        items.sort()
-        for key, val in items:
-            print >> fh, "%s=%s" % (key.upper(), val)
-
-        fh.close()
+        with open(self.CONF_FILE, "w") as fob:
+            items = self.items()
+            items.sort()
+            for key, val in items:
+                print >> fob, "%s=%s" % (key.upper(), val)
 
     def items(self):
         items = []
