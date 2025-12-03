@@ -27,7 +27,8 @@ class PidLock:
     def lock(self, nonblock=None):
         if exists(self.filename):
             try:
-                pid = int(file(self.filename).read())
+                with open(self.filename) as fob:
+                    pid = int(fob.read())
                 if not pid_exists(pid):
                     os.remove(self.filename)
             except ValueError:
@@ -39,11 +40,12 @@ class PidLock:
         if nonblock:
             flags = fcntl.LOCK_NB
 
-        self.fh = file(self.filename, "a")
+        self.fh = open(self.filename, "a")
 
         try:
             fcntl.flock(self.fh.fileno(), fcntl.LOCK_EX | flags)
-            file(self.filename, "w").write(`os.getpid()`)
+            with open(self.filename, "w") as fob:
+                fob.write(str(os.getpid()))
         except IOError, e:
             if e.errno == errno.EWOULDBLOCK:
                 raise Locked()
@@ -55,6 +57,7 @@ class PidLock:
             return
 
         fcntl.flock(self.fh.fileno(), fcntl.LOCK_UN)
+        self.fh.close()
         self.fh = None
 
         self.locked = False
@@ -82,4 +85,5 @@ def _test():
     l.unlock()
 
 if __name__ == '__main__':
+    print "Running test"
     _test()
