@@ -45,31 +45,31 @@ UnitedStdTrap examples with tee to logfile:
     #
     #     tail -f session.log
     #
-    fh = file("session.log", "w")
-    trap = UnitedStdTrap(usepty=True, transparent=True, tee=fh)
-    try:
-        os.system("/bin/bash")
-    finally:
-        trap.close()
-        fh.close()
+    with open("session.log", "w") as fob:
+        trap = UnitedStdTrap(usepty=True, transparent=True, tee=fob)
+        try:
+            os.system("/bin/bash")
+        finally:
+            trap.close()
 
     ## example 2: traps output and writes it to stdout and /tmp/log ##
     
     # also writes intercepted output to /tmp/log
-    logfile = file("/tmp/log", "w")
-    trap = UnitedStdTrap(transparent=True, tee=logfile)
-    try:
-        os.system("echo hello world")
 
-        for i in range(10):
-            print i
-    finally:
-        trap.close()
+    with open("/tmp/log", "w") as fob:
+        trap = UnitedStdTrap(transparent=True, tee=fob)
+        try:
+            os.system("echo hello world")
 
-    trapped_output = trap.std.read()
-    logfile.close()
+            for i in range(10):
+                print i
+        finally:
+            trap.close()
 
-    assert file("/tmp/log").read() == trapped_output
+        trapped_output = trap.std.read()
+
+    with open("/tmp/log") as fob:
+        assert fob.read() == trapped_output
 
 """
 
@@ -439,36 +439,35 @@ def tests():
         print 'nothing in stderr: """%s"""' % s.stderr.read()
 
     def test_tee():
-        logfile = file("/tmp/log", "w")
+        with open("/tmp/log", "w") as fob:
+            trap = StdTrap(transparent=True, stdout_tee=fob)
+            try:
+                os.system("echo hello world")
+                for i in range(10):
+                    print i
+            finally:
+                trap.close()
 
-        trap = StdTrap(transparent=True, stdout_tee=logfile)
-        try:
-            os.system("echo hello world")
-            for i in range(10):
-                print i
-        finally:
-            trap.close()
+            trapped_output = trap.stdout.read()
 
-        trapped_output = trap.stdout.read()
-        logfile.close()
-
-        assert file("/tmp/log").read() == trapped_output
+        with open("/tmp/log", "w") as fob:
+            assert fob.read() == trapped_output
 
     def test_united_tee():
-        logfile = file("/tmp/log", "w")
+        with open("/tmp/log", "w") as fob:
 
-        trap = UnitedStdTrap(transparent=True, tee=logfile)
-        try:
-            os.system("echo hello world")
-            for i in range(10):
-                print i
-        finally:
-            trap.close()
+            trap = UnitedStdTrap(transparent=True, tee=fob)
+            try:
+                os.system("echo hello world")
+                for i in range(10):
+                    print i
+            finally:
+                trap.close()
 
-        trapped_output = trap.std.read()
-        logfile.close()
+            trapped_output = trap.std.read()
 
-        assert file("/tmp/log").read() == trapped_output
+        with open("/tmp/log") as fob:
+            assert fob.read() == trapped_output
 
     test(False)
     print
@@ -543,10 +542,11 @@ def main():
         output_fh = p.stdin
 
     else:
-        output_fh = file(output, 'w')
+        output_fh = open(output, 'w')
     
     command = args if args else [ os.environ.get('SHELL', '/bin/bash') ]
     trap = UnitedStdTrap(usepty=opt_pty, transparent=not opt_quiet, tee=output_fh)
+    output_fh.flush()
     try:
         os.system(command[0] + " ".join(commands.mkarg(arg) for arg in command[1:]))
     finally:
