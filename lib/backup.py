@@ -79,7 +79,7 @@ class BackupConf(AttrDict):
                      for attr in ('profile_id', 'overrides', 'skip_files', 'skip_packages', 'skip_database')))
 
     def tofile(self, path):
-        with open(path, "w"):
+        with open(path, "w") as fob:
             json.dump(dict(self), fob)
 
 class Backup:

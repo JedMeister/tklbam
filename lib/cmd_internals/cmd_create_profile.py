@@ -138,7 +138,7 @@ class ProfileGenerator:
     def _get_packages(path_rootfs):
         def parse_status(path):
             control = ""
-            with open(path)
+            with open(path) as fob:
                 for line in fob.readlines():
                     if not line.strip():
                         yield control
