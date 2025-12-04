@@ -6,8 +6,8 @@ PYPY_DIR=/usr/lib/tklbam-pypy2
 PYPY_BIN="$PYPY_DIR/bin"
 PYPY_CMD="$PYPY_BIN/pypy"
 
-DEPROOT_LIB="$BASE_DIR/site-packages"
-DEPROOT_BIN="$BASE_DIR/bin"
+DEPROOT_LIB="$BASE_DIR/deps/lib"
+DEPROOT_BIN="$BASE_DIR/deps/bin"
 
 TMP="$BASE_DIR/debian/tmp/tklbam-deps"
 
@@ -33,18 +33,19 @@ while IFS= read -r line; do
         echo "         please update 'dep-commit-ids' to use latest" >&2
         git checkout "$commit_id"
     fi
-    "$PYPY_CMD" setup.py build
-    ch_dir "$TMP"
-    mv "$pkg/build/lib"*/* "$DEPROOT_LIB"
-    if [[ -d "$pkg/build/bin" ]]; then
-        for file in "$pkg/build/bin/"*; do
-            if [[ -x "$file" ]]; then
-                mv "$file" "$DEPROOT_BIN/"
-            fi
-        done
-    elif [[ "$pkg" == "tklbam-duplicity" ]]; then
-        mv "$pkg/bin/duplicity" "$DEPROOT_BIN"
+    if [[ "$pkg" != "python-dateutil" ]]; then
+        "$PYPY_CMD" setup.py build
+        ch_dir "$TMP"
+        mv "$pkg/build/lib"*/* "$DEPROOT_LIB"
     fi
+    case "$pkg" in
+        python-dateutil)
+            mv "$pkg/dateutil" "$DEPROOT_LIB/"
+            ;;
+        tklbam-duplicity)
+            mv "$pkg/scripts-2.7/duplicity" "$DEPROOT_BIN/"
+            ;;
+    esac
 done < "$BASE_DIR/dep-commit-ids"
 
 info "Downloading and verifying pycryptodome source tarball"
