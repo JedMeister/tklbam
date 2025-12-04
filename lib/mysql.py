@@ -229,7 +229,6 @@ class MyFS_Writer(MyFS):
 
 def mysql2fs(fh, outdir, limits=[], callback=None):
     MyFS_Writer(outdir, limits).fromfile(fh, callback)
-    fh.flush()
 
 def chunkify(elements, delim, maxlen):
     chunk = ""
@@ -613,6 +612,8 @@ def restore(myfs, etc, **kws):
     if not simulate:
         shutil.copy(join(etc, basename(PATH_DEBIAN_CNF)), PATH_DEBIAN_CNF)
         MysqlService.reload()
+
+    fh.close()
     
 class MysqlService:
     INIT_SCRIPT = "/etc/init.d/mysql"
