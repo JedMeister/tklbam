@@ -86,7 +86,7 @@ def main():
         if opt_tofile == '-':
             fh = sys.stdout
         else:
-            fh = file(opt_tofile, "w")
+            fh = open(opt_tofile, "w")
     else:
         fh = mysql.mysql(**myconf)
 
@@ -101,6 +101,7 @@ def main():
     mysql.fs2mysql(fh, myfs, limits, callback, 
                    opt_skip_extended_insert,
                    opt_add_drop_database)
+    fh.close()
 
 if __name__ == "__main__":
     main()
