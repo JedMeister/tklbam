@@ -7,12 +7,13 @@
 _PYPY_BIN=/usr/lib/tklbam-pypy2/bin
 
 if [[ "$PATH" != *"$_PYPY_BIN"* ]]; then
-    export PATH="$PATH:$_PYPY_BIN"
+    export PATH="$_PYPY_BIN:$PATH"
     echo "updating env:"
-    echo "PATH=$PATH"
 else
-    echo "pypy already in PATH"
+    echo "pypy already in PATH:"
 fi
+echo "PATH=$PATH"
+echo
 
 # lib path is the same as bin path
 _PYPY_LD_LIB="$_PYPY_BIN"
@@ -20,14 +21,13 @@ _PYPY_LD_LIB="$_PYPY_BIN"
 if [[ -z "$LD_LIBRARY_PATH" ]]; then
     export LD_LIBRARY_PATH="$_PYPY_LD_LIB"
     echo "updating env:"
-    echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
 elif [[ "$LD_LIBRARY_PATH" != *"$_PYPY_LD_LIB"* ]]; then
     export LD_LIBRARY_PATH="$_PYPY_LD_LIB:$LD_LIBRARY_PATH"
     echo "updating env:"
-    echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
 else
     echo "pypy libs already in LD_LIBRARY_PATH"
 fi
+echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
 
 unset _PYPY_BIN _PYPY_LD_LIB
 
