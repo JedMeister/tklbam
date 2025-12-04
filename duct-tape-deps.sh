@@ -20,28 +20,31 @@ ch_dir() { cd "$1" || fatal "cd $1 failed"; }
 
 mkdir -p "$TMP" "$DEPROOT_LIB" "$DEPROOT_BIN"
 
-ch_dir "$TMP"
-
-info "cloning TurnKey repos"
+info "Downloading and building TurnKey deps"
 while IFS= read -r line; do
+    ch_dir "$TMP"
     pkg="${line%:*}"
     commit_id="${line##*:}"
-    git clone "https://github.com/turnkeylinux/$pkg"
+    echo " - $pkg"
+    case "$pkg" in
+        pycurl-wrapper) branch=python2;;
+        *) branch=master;;
+    esac
+    git clone --branch $branch "https://github.com/turnkeylinux/$pkg"
     ch_dir "$pkg"
     if [[ "$commit_id" != "$(git rev-parse HEAD)" ]]; then
-        echo "WARNING: saved commit id for $pkg is NOT HEAD" >&2
+        echo "WARNING: saved commit id for $pkg is NOT HEAD of $branch" >&2
         echo "         please update 'dep-commit-ids' to use latest" >&2
         git checkout "$commit_id"
-    fi
-    if [[ "$pkg" != "python-dateutil" ]]; then
-        "$PYPY_CMD" setup.py build
-        ch_dir "$TMP"
-        mv "$pkg/build/lib"*/* "$DEPROOT_LIB"
     fi
     case "$pkg" in
         python-dateutil)
             mv "$pkg/dateutil" "$DEPROOT_LIB/"
             ;;
+        *)
+            "$PYPY_CMD" setup.py build
+            mv "$pkg/build/lib"*/* "$DEPROOT_LIB"
+            ;;&
         tklbam-duplicity)
             mv "$pkg/scripts-2.7/duplicity" "$DEPROOT_BIN/"
             ;;
@@ -49,6 +52,8 @@ while IFS= read -r line; do
 done < "$BASE_DIR/dep-commit-ids"
 
 info "Downloading and verifying pycryptodome source tarball"
+
+ch_dir "$TMP"
 url=https://github.com/Legrandin/pycryptodome
 latest_pycrypto_url=$( \
     curl --location --silent --output /dev/null \
