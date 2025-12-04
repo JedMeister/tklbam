@@ -99,7 +99,7 @@ def main():
         if opt_fromfile == '-':
             mysqldump_fh = sys.stdin
         else:
-            mysqldump_fh = file(opt_fromfile)
+            mysqldump_fh = open(opt_fromfile)
     else:
         mysqldump_fh = mysql.mysqldump(**myconf)
 
@@ -109,6 +109,7 @@ def main():
         callback = mysql.cb_print()
 
     mysql.mysql2fs(mysqldump_fh, outdir, limits, callback)
+    fh.close()
 
 if __name__ == "__main__":
     main()
