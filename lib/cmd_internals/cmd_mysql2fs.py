@@ -28,6 +28,8 @@ Supports the following subset of mysqldump(1) options:
        --host=HOST
 
 """
+import _init_sys_path
+
 import os
 from os.path import *
 

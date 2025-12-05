@@ -21,6 +21,7 @@ Options:
     
     <mapspec> := <key>,<val>[:<key>,<val> ...]
 """
+import _init_sys_path
 
 import os
 import sys

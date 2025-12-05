@@ -10,6 +10,8 @@
 # the License, or (at your option) any later version.
 # 
 """Merge passwd and group files and print uid and gid maps"""
+import _init_sys_path
+
 import sys
 import userdb
 

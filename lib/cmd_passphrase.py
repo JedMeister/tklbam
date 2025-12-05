@@ -16,6 +16,7 @@ Options:
     --random    Choose a secure random password (and print it)
 
 """
+import _init_sys_path
 
 import sys
 import getopt

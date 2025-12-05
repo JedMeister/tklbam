@@ -23,6 +23,8 @@ Exitcode:
     11          NO APIKEY
 
 """
+import _init_sys_path
+
 import sys
 import getopt
 from StringIO import StringIO

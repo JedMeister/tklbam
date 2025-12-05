@@ -12,6 +12,8 @@
 """
 Determine your system's default backup profile_id
 """
+import _init_sys_path
+
 import sys
 import getopt
 

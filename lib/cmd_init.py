@@ -71,6 +71,7 @@ Examples:
     tklbam-init --solo --force-profile=empty
 
 """
+import _init_sys_path
 
 import sys
 import hub

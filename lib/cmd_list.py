@@ -33,6 +33,8 @@ Examples:
     list "backup_id=%backup_id label=%label size=%{size}MB"
 
 """
+import _init_sys_path
+
 import sys
 import getopt
 import string

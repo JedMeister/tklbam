@@ -17,6 +17,7 @@ Options:
     -v --verbose            Turn on verbosity
     -s --simulate           Don't execute apt-get
 """
+import _init_sys_path
 
 import os
 import re

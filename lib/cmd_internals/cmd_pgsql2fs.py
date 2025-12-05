@@ -12,6 +12,8 @@
 """
 Dump PostgreSQL databases to a filesystem path.
 """
+import _init_sys_path
+
 from os.path import *
 
 import sys

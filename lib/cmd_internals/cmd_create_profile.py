@@ -85,6 +85,8 @@ Usage examples:
     echo /etc -/etc/.git | tklbam-internal create-profile -- my-custom-profile/ -
 
 """
+import _init_sys_path
+
 import os
 from os.path import *
 

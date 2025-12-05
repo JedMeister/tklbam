@@ -10,6 +10,8 @@
 # the License, or (at your option) any later version.
 # 
 """Print list of new packages"""
+import _init_sys_path
+
 import os
 import sys
 import commands

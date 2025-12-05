@@ -28,6 +28,8 @@ Supports the following subset of mysql(1) options:
        --host=HOST
 
 """
+import _init_sys_path
+
 import sys
 import getopt
 

@@ -17,6 +17,8 @@ Options:
 
     -c --create         Create index
 """
+import _init_sys_path
+
 import sys
 import getopt
 

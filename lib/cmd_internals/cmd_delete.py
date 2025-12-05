@@ -16,6 +16,7 @@ Options:
     -v --verbose               Print list of fixes
     -s --simulate              Print list of fixes, don't apply them
 """
+import _init_sys_path
 
 import os
 from os.path import *

@@ -128,6 +128,7 @@ Examples:
     tklbam-restore 1 --simulate --skip-database --skip-packages --limits="/root"
 
 """
+import _init_sys_path
 
 import os
 import sys

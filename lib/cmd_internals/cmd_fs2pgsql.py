@@ -12,6 +12,8 @@
 """
 Map a filesystem created by pgsql2fs back to PostgreSQL
 """
+import _init_sys_path
+
 import sys
 from os.path import *
 

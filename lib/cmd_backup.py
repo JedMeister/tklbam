@@ -121,6 +121,7 @@ Examples:
     tklbam-backup --raw-upload=/srv
 
 """
+import _init_sys_path
 
 import os
 from os.path import *

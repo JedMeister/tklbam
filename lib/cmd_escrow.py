@@ -20,6 +20,7 @@ Options:
     -P --no-passphrase      Don't encrypt escrow key with a passphrase
     -R --random-passphrase  Choose a secure random passphrase (and print it)
 """
+import _init_sys_path
 
 import sys
 import getopt

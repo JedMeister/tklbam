@@ -16,6 +16,7 @@ Options:
 
     --force     Don't ask for confirmation (caution)
 """
+import _init_sys_path
 
 import sys
 import getopt

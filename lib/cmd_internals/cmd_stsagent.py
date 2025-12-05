@@ -10,6 +10,7 @@
 # the License, or (at your option) any later version.
 #
 """Ask Hub to use IAM role to get temporary credentials to your TKLBAM S3 storage"""
+import _init_sys_path
 
 import sys
 from registry import hub_backups
