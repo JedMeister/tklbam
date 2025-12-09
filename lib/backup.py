@@ -69,6 +69,8 @@ class BackupConf(AttrDict):
         self.skip_packages = skip_packages
         self.skip_database = skip_database
 
+        print "# BackupConf.overrides (__init__): " + str(self.overrides)
+
     @classmethod
     def fromfile(cls, path):
         if not exists(path):
@@ -76,6 +78,7 @@ class BackupConf(AttrDict):
 
         with open(path) as fob:
             d = json.load(fob)
+        print "# BackupConf.from_file (d['overrides']): " + str(d['overrides'])
         return cls(*(d[attr]
                      for attr in ('profile_id', 'overrides', 'skip_files', 'skip_packages', 'skip_database')))
 
@@ -117,7 +120,8 @@ class Backup:
 
         changes = whatchanged(dirindex, paths)
         changes.sort(lambda a,b: cmp(a.path, b.path))
-
+        print "### Backup._write_whatchanged() - changes: " + str(changes)
+        print "### END Backup._write_whatchanged() - changes"
         changes.tofile(dest)
         olist = [ change.path for change in changes if change.OP == 'o' ]
         with open(dest_olist, "w") as fob:
@@ -177,7 +181,7 @@ class Backup:
             # support empty profiles
             dirindex = profile.dirindex if exists(profile.dirindex) else "/dev/null"
             dirindex_conf = profile.dirindex_conf if exists(profile.dirindex_conf) else "/dev/null"
-
+            print "backup.Backup._create_extras - conf.overrides.fs: " + str(conf.overrides.fs)
             self._write_whatchanged(extras.fsdelta, extras.fsdelta_olist,
                                     dirindex, dirindex_conf,
                                     conf.overrides.fs)
@@ -207,6 +211,7 @@ class Backup:
     def __init__(self, profile, overrides, 
                  skip_files=False, skip_packages=False, skip_database=False, resume=False, verbose=True, extras_root="/"):
 
+        print "# backup.Backup"
         self.verbose = verbose
 
         if not profile:

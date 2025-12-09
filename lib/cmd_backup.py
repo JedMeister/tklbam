@@ -442,6 +442,7 @@ def main():
 
             else:
                 hooks.backup.pre()
+                print "# cmd_backup.main() (conf.overrides): " + str(conf.overrides)
                 b = backup.Backup(registry.profile,
                                   conf.overrides,
                                   conf.backup_skip_files, conf.backup_skip_packages, conf.backup_skip_database,
