@@ -61,6 +61,7 @@ def _filter_deleted(files):
 
 class BackupConf(AttrDict):
     def __init__(self, profile_id, overrides, skip_files, skip_packages, skip_database):
+        print "### BackupConf().init() - overrides: {}".format(overrides)
         AttrDict.__init__(self)
         self.profile_id = profile_id
         self.overrides = overrides
@@ -106,9 +107,13 @@ class Backup:
 
     def _write_whatchanged(self, dest, dest_olist, dirindex, dirindex_conf,
                            overrides=[]):
+        print "### Backup._write_whatchanged() - overrides={}".format(overrides)
         with open(dirindex_conf) as fob:
             paths = read_paths(fob)
         paths += overrides
+        print "### Backup._write_whatchanged()"
+        print "### - paths (after paths): paths={}".format(paths)
+
 
         changes = whatchanged(dirindex, paths)
         changes.sort(lambda a,b: cmp(a.path, b.path))
