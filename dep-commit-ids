@@ -3,3 +3,4 @@ tklbam-duplicity:c5f4d9a09c4c127ed38720ed1848c04d40bc4612
 tklbam-python-boto:aa3759b09b3a81831270d3627d11a8433f7ebf32
 pycurl-wrapper:adde46c337131f01d9f0e96259625e92ccfa37fa
 python-dateutil:28af6515d196c53fa8e603711ee2911323aaa736
+python-six:2e7cd1cefb2f94a9cc0fe653e778ce003e34b77b
