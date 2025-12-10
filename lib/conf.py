@@ -22,7 +22,7 @@ class Limits(list):
         try:
             with open(inputfile) as fob:
                 limits = []
-                for line in fh.readlines():
+                for line in fob.readlines():
                     line = re.sub(r'#.*', '', line).strip()
                     if not line:
                         continue
