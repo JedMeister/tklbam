@@ -51,14 +51,14 @@ while IFS= read -r line; do
     fi
     case "$pkg" in
         python-dateutil)
-            mv "$pkg/dateutil" "$DEPROOT_LIB/"
+            mv "build/dateutil" "$DEPROOT_LIB/"
             ;;
         *)
             "$PYPY_CMD" setup.py build
-            mv "$pkg/build/lib"*/* "$DEPROOT_LIB"
+            mv "build/lib"*/* "$DEPROOT_LIB/"
             ;;&
         tklbam-duplicity)
-            mv "$pkg/scripts-2.7/duplicity" "$DEPROOT_BIN/"
+            mv "scripts-2.7/duplicity" "$DEPROOT_BIN/"
             ;;
     esac
 done < "$BASE_DIR/dep-commit-ids"
