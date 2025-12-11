@@ -42,7 +42,7 @@ while IFS= read -r line; do
             branch=master
             ;;
     esac
-    git clone --branch $branch "https://github.com/turnkeylinux/$pkg"
+    git clone --branch $branch "https://github.com/$org/$pkg"
     ch_dir "$pkg"
     if [[ "$commit_id" != "$(git rev-parse HEAD)" ]]; then
         echo "WARNING: saved commit id for $pkg is NOT HEAD of $branch" >&2
