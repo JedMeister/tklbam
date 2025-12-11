@@ -26,9 +26,21 @@ while IFS= read -r line; do
     pkg="${line%:*}"
     commit_id="${line##*:}"
     echo " - $pkg"
+    org=turnkeylinux
     case "$pkg" in
-        pycurl-wrapper) branch=python2;;
-        *) branch=master;;
+        pycurl-wrapper)
+            branch=python2
+            ;;
+        python-pycurl)
+            branch=tkl
+            ;;
+        tklbam-duplicity)
+            branch=trixie-tweaks
+            org=JedMeister
+            ;;
+        *)
+            branch=master
+            ;;
     esac
     git clone --branch $branch "https://github.com/turnkeylinux/$pkg"
     ch_dir "$pkg"
