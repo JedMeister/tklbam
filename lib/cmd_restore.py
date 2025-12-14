@@ -140,7 +140,7 @@ import shlex
 
 from os.path import *
 from restore import Restore
-import duplicity
+import py2_duplicity as duplicity
 
 from pylib.stdtrap import UnitedStdTrap
 from pylib.temp import TempDir

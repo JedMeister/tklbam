@@ -139,7 +139,7 @@ from pylib.pidlock import PidLock
 
 import hub
 import backup
-import duplicity
+import py2_duplicity as duplicity
 
 import hooks
 from registry import registry, update_profile, hub_backups
@@ -456,7 +456,7 @@ def main():
                     print "\n" + fmt_title("Executing Duplicity to backup system changes to encrypted, incremental archives")
                     _print("export PASSPHRASE=$(cat %s)" % conf.secretfile)
 
-                    uploader = duplicity.Uploader(True,
+                    uploader = duplicity.Uploader("debug",
                                                   conf.volsize,
                                                   conf.full_backup,
                                                   conf.s3_parallel_uploads,

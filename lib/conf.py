@@ -4,7 +4,7 @@ from os.path import *
 import re
 
 from pylib.paths import Paths as _Paths
-import duplicity
+import py2_duplicity as duplicity
 
 class Error(Exception):
     pass
