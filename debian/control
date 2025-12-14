@@ -12,6 +12,7 @@ Build-Depends:
  libssl-dev,
  libgmp-dev,
  turnkey-pypy2 | turnkey-pypy2-full,
+ librsync2t64,
 Standards-Version: 4.0.0
 
 Package: tklbam
