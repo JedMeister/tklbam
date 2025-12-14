@@ -59,7 +59,7 @@ class Duplicity:
             opts += [ ('archive-dir', '/var/cache/duplicity') ]
 
         opts = [ "--%s=%s" % (key, val) for key, val in opts ]
-        self.command = ["/usr/bin/duplicity"] + opts + list(args)
+        self.command = ["/usr/lib/tklbam/deps/bin/duplicity"] + opts + list(args)
 
     def run(self, passphrase, creds=None, debug=False):
         sys.stdout.flush()
