@@ -31,7 +31,7 @@ while IFS= read -r line; do
         pycurl-wrapper)
             branch=python2
             ;;
-        python-pycurl)
+        python-pycurl|python-dateutil|python-six)
             branch=tkl
             ;;
         tklbam-duplicity)
@@ -51,14 +51,17 @@ while IFS= read -r line; do
     fi
     case "$pkg" in
         python-dateutil)
-            mv "build/dateutil" "$DEPROOT_LIB/"
+            mv "dateutil" "$DEPROOT_LIB/"
+            ;;
+        python-six)
+            mv "six.py" "$DEPROOT_LIB/"
             ;;
         *)
             "$PYPY_CMD" setup.py build
             mv "build/lib"*/* "$DEPROOT_LIB/"
             ;;&
         tklbam-duplicity)
-            mv "scripts-2.7/duplicity" "$DEPROOT_BIN/"
+            mv "build/scripts-2.7/duplicity" "$DEPROOT_BIN/"
             ;;
     esac
 done < "$BASE_DIR/dep-commit-ids"
