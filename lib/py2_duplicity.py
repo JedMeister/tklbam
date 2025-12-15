@@ -12,14 +12,18 @@ import os
 from os.path import *
 
 import sys
+import shutil
 
 from subprocess import *
+from glob import glob
 from squid import Squid
 
 from utils import AttrDict, iamroot
 
 import resource
 RLIMIT_NOFILE_MAX = 8192
+
+TARGET_ADDRESS = os.environ.get("TKLBAM_BUCKET", "")
 
 def _find_duplicity_pylib(path):
     if not isdir(path):
@@ -35,7 +39,34 @@ PATH_DEPS = os.environ.get('TKLBAM_DEPS', '/usr/lib/tklbam/deps')
 PATH_DEPS_BIN = join(PATH_DEPS, "bin")
 PATH_DEPS_PYLIB = _find_duplicity_pylib(PATH_DEPS)
 
+DEFAULT_DUPLICITY = join(PATH_DEPS_BIN, "duplicity")
+DUPLICITY = os.environ.get('DUPLICITY', DEFAULT_DUPLICITY)
+
+TKLBAM_DUPLICITY_LIB = join(PATH_DEPS, "lib", "duplicity")
+TKLBAM_DUPLICITY_LIB_BAK = TKLBAM_DUPLICITY_LIB + "_tklbam"
+
+if DUPLICITY == DEFAULT_DUPLICITY:
+    if exists(TKLBAM_DUPLICITY_LIB_BAK):
+        shutil.move(TKLBAM_DUPLICITY_LIB_BAK, TKLBAM_DUPLICITY_LIB)
+else:
+    if exists(TKLBAM_DUPLICITY_LIB):
+        shutil.move(TKLBAM_DUPLICITY_LIB, TKLBAM_DUPLICITY_LIB_BAK)
+
 from cmd_internal import fmt_internal_command
+
+def _py3_pythonpath():
+    verified_py3_path = []
+    likely_py3_paths = (
+        '/usr/lib/python3*.zip',
+        '/usr/lib/python3*',
+        '/usr/lib/python3*/lib-dynload',
+        '/usr/local/lib/python3*/dist-packages',
+        '/usr/lib/python3*/dist-packages',
+    )
+    for path in likely_py3_paths:
+        verified_py3_path.extend(glob(path))
+    return verified_py3_paths
+
 
 class Error(Exception):
     pass
@@ -59,12 +90,22 @@ class Duplicity:
             opts += [ ('archive-dir', '/var/cache/duplicity') ]
 
         opts = [ "--%s=%s" % (key, val) for key, val in opts ]
-        self.command = ["/usr/lib/tklbam/deps/bin/duplicity"] + opts + list(args)
+        self.command = [DUPLICITY] + opts + list(args)
+
+    def _get_env(self):
+        DUPLICITY_ENV = os.environ.copy()
+        if DUPLICITY == DEFAULT_DUPLICITY:
+            DUPLICITY_ENV["PYTHONPATH"] = sys.path
+        else:
+            # assume we want python3 path if not using tklbam legacy duplicty
+            DUPLICITY_ENV["PYTHONPATH"] = _py3_pythonpath()
+        return DUPLICITY_ENV
 
     def run(self, passphrase, creds=None, debug=False):
         sys.stdout.flush()
 
         if creds:
+            print "### creds: " + str(creds)
             if creds.type in ('devpay', 'iamuser'):
                 os.environ['AWS_ACCESS_KEY_ID'] = creds.accesskey
                 os.environ['AWS_SECRET_ACCESS_KEY'] = creds.secretkey
@@ -74,7 +115,24 @@ class Duplicity:
                                                     else creds.sessiontoken)
 
             elif creds.type == 'iamrole':
+                print "### USING IAM ROLE for S3 auth"
                 os.environ['AWS_STSAGENT'] = fmt_internal_command('stsagent')
+                from registry import hub_backups
+                #from cmd_internals.cmd_stsagent import get_credentials
+                #creds = get_credentials(hub_backups())
+                if exists("/var/lib/tklbam/iam_role"):
+                    with open("/var/lib/tklbam/iam_role") as fob:
+                        os.environ['AWS_ROLE_ARN'] = fob.read().strip()
+                else:
+                    print "WARNING /var/lib/tklbam/iam_role not found"
+                    print "Not setting AWS_ROLE_ARN env var"
+                # accesskey, secretkey, sessiontoken, expiration
+                os.environ['AWS_ACCESS_KEY_ID'] = creds["accesskey"]
+                os.environ['AWS_SECRET_ACCESS_KEY'] = creds["secretkey"]
+                os.environ['AWS_SESSION_TOKEN'] = creds["sessiontoken"]
+                # this isn't actually used, but for good measure...
+                os.environ['AWS_SESSION_EXPIRATION'] = creds["expiration"]
+
 
         if PATH_DEPS_BIN not in os.environ['PATH'].split(':'):
             os.environ['PATH'] = PATH_DEPS_BIN + ':' + os.environ['PATH']
@@ -107,6 +165,13 @@ class Duplicity:
 
 
         child = Popen(self.command)
+        print "####### start creds & env after Popen #########"
+        print "### creds: " + str(creds)
+        print "### env:"
+        for k, v in os.environ.items():
+            if k.startswith("A") or k == 'PASSPHRASE' or k == 'TKLBAM_BUCKET':
+                print "### - " + k + " = " + v
+        print "####### end creds & env after Popen #########"
         del os.environ['PASSPHRASE']
 
         exitcode = child.wait()
@@ -133,6 +198,10 @@ def _raise_rlimit(type, newlimit):
 class Target(AttrDict):
     def __init__(self, address, credentials, secret):
         AttrDict.__init__(self)
+        print "#### target (pre env check): " + address
+        if TARGET_ADDRESS:
+            address = TARGET_ADDRESS
+        print "#### target (post env check): " + address
         self.address = address
         self.credentials = credentials
         self.secret = secret
@@ -145,7 +214,6 @@ class Downloader(AttrDict):
 
     def __init__(self, time=None, cache_size=CACHE_SIZE, cache_dir=CACHE_DIR):
         AttrDict.__init__(self)
-
         self.time = time
         self.cache_size = cache_size
         self.cache_dir = cache_dir
@@ -212,6 +280,8 @@ class Uploader(AttrDict):
 
         self.verbose = verbose
         self.volsize = volsize
+        if full_if_older_than == "now":
+            full_if_older_than = "1s"
         self.full_if_older_than = full_if_older_than
         self.s3_parallel_uploads = s3_parallel_uploads
 
@@ -226,7 +296,6 @@ class Uploader(AttrDict):
         opts = []
         if self.verbose:
             opts += [('verbosity', 5)]
-
         if force_cleanup:
             cleanup_command = Duplicity(opts, "cleanup", "--force", target.address)
             log(cleanup_command)
