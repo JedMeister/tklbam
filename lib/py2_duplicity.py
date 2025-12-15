@@ -15,7 +15,6 @@ import sys
 import shutil
 
 from subprocess import *
-from glob import glob
 from squid import Squid
 
 from utils import AttrDict, iamroot
@@ -54,20 +53,6 @@ else:
 
 from cmd_internal import fmt_internal_command
 
-def _py3_pythonpath():
-    verified_py3_path = []
-    likely_py3_paths = (
-        '/usr/lib/python3*.zip',
-        '/usr/lib/python3*',
-        '/usr/lib/python3*/lib-dynload',
-        '/usr/local/lib/python3*/dist-packages',
-        '/usr/lib/python3*/dist-packages',
-    )
-    for path in likely_py3_paths:
-        verified_py3_path.extend(glob(path))
-    return verified_py3_paths
-
-
 class Error(Exception):
     pass
 
@@ -91,15 +76,6 @@ class Duplicity:
 
         opts = [ "--%s=%s" % (key, val) for key, val in opts ]
         self.command = [DUPLICITY] + opts + list(args)
-
-    def _get_env(self):
-        DUPLICITY_ENV = os.environ.copy()
-        if DUPLICITY == DEFAULT_DUPLICITY:
-            DUPLICITY_ENV["PYTHONPATH"] = sys.path
-        else:
-            # assume we want python3 path if not using tklbam legacy duplicty
-            DUPLICITY_ENV["PYTHONPATH"] = _py3_pythonpath()
-        return DUPLICITY_ENV
 
     def run(self, passphrase, creds=None, debug=False):
         sys.stdout.flush()
