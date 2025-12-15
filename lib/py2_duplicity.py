@@ -93,9 +93,6 @@ class Duplicity:
             elif creds.type == 'iamrole':
                 print "### USING IAM ROLE for S3 auth"
                 os.environ['AWS_STSAGENT'] = fmt_internal_command('stsagent')
-                from registry import hub_backups
-                #from cmd_internals.cmd_stsagent import get_credentials
-                #creds = get_credentials(hub_backups())
                 if exists("/var/lib/tklbam/iam_role"):
                     with open("/var/lib/tklbam/iam_role") as fob:
                         os.environ['AWS_ROLE_ARN'] = fob.read().strip()
