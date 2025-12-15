@@ -95,7 +95,10 @@ class Duplicity:
                 os.environ['AWS_STSAGENT'] = fmt_internal_command('stsagent')
                 # only use "new" env vars if TKLBAM_NEW_ENV set
                 # will assist testing ...
-                if os.environ.get("TKLBAM_NEW_ENV", ""):
+                if not os.environ.get("TKLBAM_NEW_ENV", ""):
+                    print "WARNING: TKLBAM_NEW_ENV not set - using old env"
+                    os.environ['AWS_STSAGENT'] = fmt_internal_command('stsagent')
+                else:
                     if exists("/var/lib/tklbam/iam_role"):
                         with open("/var/lib/tklbam/iam_role") as fob:
                             os.environ['AWS_ROLE_ARN'] = fob.read().strip()
@@ -175,9 +178,28 @@ class Target(AttrDict):
     def __init__(self, address, credentials, secret):
         AttrDict.__init__(self)
         print "#### target (pre env check): " + address
+        region = "not set"
         if TARGET_ADDRESS:
+            print "#### using 'TKLBAM_BUCKET' env var: " + TARGET_ADDRESS
             address = TARGET_ADDRESS
+        elif os.environ.get("TKLBAM_FIX_ADDR", ""):
+            print "#### 'TKLBAM_FIX_ADDR' env var set; dynamically updating address"
+            addr_split = address.split("/")
+            if (
+                addr_split[0] == "s3:"
+                and addr_split[2].startswith("s3-")
+                and addr_split[2].endswith(".amazonaws.com")
+            ):
+                print "#### address matches:"
+                print "#### - old address: " + address
+                region = addr_split[2][3:-14]
+                del addr_split[2]
+                address = "/".join(addr_split)
+                print "#### - new address: " + address
+                print "#### AWS_REGION: " + region
+                os.environ["AWS_REGION"] = region
         print "#### target (post env check): " + address
+        print "#### region (post env check): " + region
         self.address = address
         self.credentials = credentials
         self.secret = secret
