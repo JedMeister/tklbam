@@ -80,49 +80,34 @@ class Duplicity:
     def run(self, passphrase, creds=None, debug=False):
         sys.stdout.flush()
 
+        env = os.environ.copy()
+
         if creds:
             print "### creds: " + str(creds)
             if creds.type in ('devpay', 'iamuser'):
-                os.environ['AWS_ACCESS_KEY_ID'] = creds.accesskey
-                os.environ['AWS_SECRET_ACCESS_KEY'] = creds.secretkey
-                os.environ['X_AMZ_SECURITY_TOKEN'] = (",".join([creds.producttoken,
+                env['AWS_ACCESS_KEY_ID'] = creds.accesskey
+                env['AWS_SECRET_ACCESS_KEY'] = creds.secretkey
+                env['X_AMZ_SECURITY_TOKEN'] = (",".join([creds.producttoken,
                                                                 creds.usertoken])
                                                     if creds.type == 'devpay'
                                                     else creds.sessiontoken)
 
             elif creds.type == 'iamrole':
                 print "### USING IAM ROLE for S3 auth"
-                os.environ['AWS_STSAGENT'] = fmt_internal_command('stsagent')
-                # only use "new" env vars if TKLBAM_NEW_ENV set
-                # will assist testing ...
-                if not os.environ.get("TKLBAM_NEW_ENV", ""):
-                    print "WARNING: TKLBAM_NEW_ENV not set - using old env"
-                    os.environ['AWS_STSAGENT'] = fmt_internal_command('stsagent')
+                if exists("/var/lib/tklbam/iam_role"):
+                    with open("/var/lib/tklbam/iam_role") as fob:
+                        self.env['AWS_ROLE_ARN'] = fob.read().strip()
                 else:
-                    if exists("/var/lib/tklbam/iam_role"):
-                        with open("/var/lib/tklbam/iam_role") as fob:
-                            os.environ['AWS_ROLE_ARN'] = fob.read().strip()
-                    else:
-                        print "WARNING /var/lib/tklbam/iam_role not found"
-                        print "Not setting AWS_ROLE_ARN env var"
-                    # accesskey, secretkey, sessiontoken, expiration
-                    os.environ['AWS_ACCESS_KEY_ID'] = creds["accesskey"]
-                    os.environ['AWS_SECRET_ACCESS_KEY'] = creds["secretkey"]
-                    os.environ['AWS_SESSION_TOKEN'] = creds["sessiontoken"]
-                    # this isn't actually used, but for good measure...
-                    os.environ['AWS_SESSION_EXPIRATION'] = creds["expiration"]
+                    print "WARNING /var/lib/tklbam/iam_role not found"
+                    print "Not setting AWS_ROLE_ARN env var"
+                # accesskey, secretkey, sessiontoken, expiration
+                env['AWS_ACCESS_KEY_ID'] = creds["accesskey"]
+                env['AWS_SECRET_ACCESS_KEY'] = creds["secretkey"]
+                env['AWS_SESSION_TOKEN'] = creds["sessiontoken"]
+                # this isn't actually used, but for good measure...
+                env['AWS_SESSION_EXPIRATION'] = creds["expiration"]
 
-
-        if PATH_DEPS_BIN not in os.environ['PATH'].split(':'):
-            os.environ['PATH'] = PATH_DEPS_BIN + ':' + os.environ['PATH']
-
-        if PATH_DEPS_PYLIB:
-            pythonpath = os.environ.get('PYTHONPATH')
-            pythonpath = ((PATH_DEPS_PYLIB + ':' + pythonpath)
-                          if pythonpath else PATH_DEPS_PYLIB)
-            os.environ['PYTHONPATH'] = pythonpath
-
-        os.environ['PASSPHRASE'] = passphrase
+        env['PASSPHRASE'] = passphrase
 
         if debug:
             print """
@@ -142,18 +127,10 @@ class Duplicity:
 
             executil.system(shell)
 
-
-        child = Popen(self.command)
-        print "####### start creds & env after Popen #########"
-        print "### creds: " + str(creds)
-        print "### env:"
-        for k, v in os.environ.items():
-            if k.startswith("A") or k == 'PASSPHRASE' or k == 'TKLBAM_BUCKET':
-                print "### - " + k + " = " + v
-        print "####### end creds & env after Popen #########"
-        del os.environ['PASSPHRASE']
-
+        log("\n// duplicity started...")
+        child = Popen(self.command, env=env)
         exitcode = child.wait()
+        log("\n// duplicity stopped...")
         if exitcode != 0:
             raise Error("non-zero exitcode (%d) from backup command: %s" % (exitcode, str(self)))
 
@@ -177,29 +154,20 @@ def _raise_rlimit(type, newlimit):
 class Target(AttrDict):
     def __init__(self, address, credentials, secret):
         AttrDict.__init__(self)
-        print "#### target (pre env check): " + address
-        region = "not set"
-        if TARGET_ADDRESS:
-            print "#### using 'TKLBAM_BUCKET' env var: " + TARGET_ADDRESS
-            address = TARGET_ADDRESS
-        elif os.environ.get("TKLBAM_FIX_ADDR", ""):
-            print "#### 'TKLBAM_FIX_ADDR' env var set; dynamically updating address"
-            addr_split = address.split("/")
-            if (
-                addr_split[0] == "s3:"
-                and addr_split[2].startswith("s3-")
-                and addr_split[2].endswith(".amazonaws.com")
-            ):
-                print "#### address matches:"
-                print "#### - old address: " + address
-                region = addr_split[2][3:-14]
-                del addr_split[2]
-                address = "/".join(addr_split)
-                print "#### - new address: " + address
-                print "#### AWS_REGION: " + region
-                os.environ["AWS_REGION"] = region
-        print "#### target (post env check): " + address
-        print "#### region (post env check): " + region
+        addr_split = address.split("/")
+        region = ""
+        if (
+            addr_split[0] == "s3:"
+            and addr_split[2].startswith("s3-")
+            and addr_split[2].endswith(".amazonaws.com")
+        ):
+            region = addr_split[2][3:-14]
+            del addr_split[2]
+            address = "/".join(addr_split)
+            self.env["AWS_REGION"] = region
+        else:
+            print "ERROR: could not determine AWS region - this may cause failure"
+        self.region = region
         self.address = address
         self.credentials = credentials
         self.secret = secret
