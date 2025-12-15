@@ -93,18 +93,21 @@ class Duplicity:
             elif creds.type == 'iamrole':
                 print "### USING IAM ROLE for S3 auth"
                 os.environ['AWS_STSAGENT'] = fmt_internal_command('stsagent')
-                if exists("/var/lib/tklbam/iam_role"):
-                    with open("/var/lib/tklbam/iam_role") as fob:
-                        os.environ['AWS_ROLE_ARN'] = fob.read().strip()
-                else:
-                    print "WARNING /var/lib/tklbam/iam_role not found"
-                    print "Not setting AWS_ROLE_ARN env var"
-                # accesskey, secretkey, sessiontoken, expiration
-                os.environ['AWS_ACCESS_KEY_ID'] = creds["accesskey"]
-                os.environ['AWS_SECRET_ACCESS_KEY'] = creds["secretkey"]
-                os.environ['AWS_SESSION_TOKEN'] = creds["sessiontoken"]
-                # this isn't actually used, but for good measure...
-                os.environ['AWS_SESSION_EXPIRATION'] = creds["expiration"]
+                # only use "new" env vars if TKLBAM_NEW_ENV set
+                # will assist testing ...
+                if os.environ.get("TKLBAM_NEW_ENV", ""):
+                    if exists("/var/lib/tklbam/iam_role"):
+                        with open("/var/lib/tklbam/iam_role") as fob:
+                            os.environ['AWS_ROLE_ARN'] = fob.read().strip()
+                    else:
+                        print "WARNING /var/lib/tklbam/iam_role not found"
+                        print "Not setting AWS_ROLE_ARN env var"
+                    # accesskey, secretkey, sessiontoken, expiration
+                    os.environ['AWS_ACCESS_KEY_ID'] = creds["accesskey"]
+                    os.environ['AWS_SECRET_ACCESS_KEY'] = creds["secretkey"]
+                    os.environ['AWS_SESSION_TOKEN'] = creds["sessiontoken"]
+                    # this isn't actually used, but for good measure...
+                    os.environ['AWS_SESSION_EXPIRATION'] = creds["expiration"]
 
 
         if PATH_DEPS_BIN not in os.environ['PATH'].split(':'):
