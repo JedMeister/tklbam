@@ -36,6 +36,8 @@ Depends:
  ${misc:Depends},
  gnupg,
  ntpsec-ntpdate,
+ duplicity,
+ turnkey-python3-boto3 | python3-boto3,
  turnkey-pypy2 | turnkey-pypy2-full | turnkey-pypy2-dbg,
  gpg (>= 2.2.12),
  tar,
