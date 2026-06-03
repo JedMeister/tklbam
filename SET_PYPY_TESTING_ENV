@@ -2,7 +2,6 @@
 # useful for testing py2 commands in interactive python prompt
 #
 # NOTE: 'source' this file - DON'T try to execute it
-# useful for testing py2 commands in interactive python prompt
 
 _PYPY_BIN=/usr/lib/tklbam-pypy2/bin
 
