@@ -1,0 +1,41 @@
+v1.5.0 Release Notes
+====================
+
+Packaging and code updates to support running on pypy2.7. No functional
+changes.
+
+* Bugfixes:
+  - Bugfix broken help pager (not sure how long that has been broken!?).
+  - Bugfix broken tar command (deprecated functionality removed in Debian
+    Trixie).
+
+* Code maintenance & source updates:
+  - Update shebang for use with TurnKey pypy2 packaging.
+  - Move turnkey-pylib dependencies into tklbam code repo (libraries used by
+    other TKL projects have already been split out into separate packages and
+    updated to py3).
+  - Migrate other python files to 'lib/' subdir (toa simplify packaging).
+  - Use context managers for file reading/writing where possible.
+  - Bugfix broken help pager (not sure how long that has been broken!?).
+  - Include 'dev-setup.sh' tool to support easy "on the fly" testing.
+  - Add 'SET_PYPY_TESTING_ENV' to set up env vars to support use of pypy from
+    terminal.
+  - Include 'aws_cred_file.py' testing tool.
+  - Update docs.
+  - Additional code tidying, linting and formating fixes.
+  - Update, extend and tidy example config.
+  - Update gitignore to ignore common build & cached assests.
+  - Remove legacy travis config.
+
+* Packaging updates:
+  - Replace Makefile with hacky 'duct-tape-deps.sh' build script - which
+    bundles dependencies at build time.
+  - Migrate some package build steps to default debian-helper script.
+  - Add postrm maintainer script to clean up compiled pyc files on uninstall.
+  - Update dependencies and description in control file.
+  - Update package architecture; 'all' => 'any' (actually is arch dependant).
+  - Add 'DECKDEBUILD_ENV' file with env vars that need to be set when building
+    via deckdebuild.
+  - Update dependencies to run on pypy2.
+  - Set static datetime and exclude bytecode by default to make package leaner
+    and reproducable.
