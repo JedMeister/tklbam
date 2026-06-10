@@ -31,11 +31,11 @@ Options:
     --force-profile=PROFILE_ID     Force a specific backup profile. E.g.:
                                    "core-18.1-bookworm"; or "turnkey-lamp-18.1-bookworm-amd64"
 
-                                   Without --force-profile the profile_id is 
+                                   Without --force-profile the profile_id is
                                    automatically detected - if it exists.
 
     --force-profile=empty          "empty" is a special profile_id value that creates an empty
-                                   backup profile. Backup configurations will only be taken 
+                                   backup profile. Backup configurations will only be taken
                                    from /etc/tklbam.
 
     --force-profile=PATH           Path to a custom backup profile
@@ -46,7 +46,7 @@ Options:
 
                                    tklbam-backup will only work with --address or --dump options
                                    tklbam-restore will only work with --address or a backup extract
-   
+
 Security warning:
 
     Providing your Hub account's APIKEY as a command line argument is

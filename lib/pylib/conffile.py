@@ -60,7 +60,7 @@ class ConfFile(dict):
 
     def read(self):
         if not self.CONF_FILE or not os.path.exists(self.CONF_FILE):
-            return 
+            return
 
         with open(self.CONF_FILE) as fob:
             for line in fob.readlines():

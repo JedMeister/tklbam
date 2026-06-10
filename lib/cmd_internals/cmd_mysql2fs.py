@@ -1,14 +1,14 @@
 #!/usr/lib/tklbam-pypy2/bin/pypy
-# 
+#
 # Copyright (c) 2010-2012 Liraz Siri <liraz@turnkeylinux.org>
-# 
+#
 # This file is part of TKLBAM (TurnKey GNU/Linux BAckup and Migration).
-# 
+#
 # TKLBAM is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
 # published by the Free Software Foundation; either version 3 of
 # the License, or (at your option) any later version.
-# 
+#
 """
 Map a MySQL dump to a filesystem path.
 
@@ -21,7 +21,7 @@ Options:
 
 Supports the following subset of mysqldump(1) options:
 
-    -u --user=USER 
+    -u --user=USER
     -p --password=PASS
 
        --defaults-file=PATH
@@ -54,7 +54,7 @@ def usage(e=None):
 
 def main():
     try:
-        opts, args = getopt.gnu_getopt(sys.argv[1:], 'Du:p:v', 
+        opts, args = getopt.gnu_getopt(sys.argv[1:], 'Du:p:v',
                                        ['verbose', 'delete', 'fromfile=',
                                         'user=', 'password=', 'defaults-file=', 'host='])
     except getopt.GetoptError, e:

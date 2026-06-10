@@ -5,7 +5,7 @@ import errno
 
 class Locked(Exception):
     pass
-    
+
 def pid_exists(pid):
     try:
         os.kill(pid, 0)
@@ -36,7 +36,7 @@ class PidLock:
 
         flags = 0
         if nonblock is None:
-            nonblock = self.nonblock 
+            nonblock = self.nonblock
         if nonblock:
             flags = fcntl.LOCK_NB
 
@@ -68,7 +68,7 @@ class PidLock:
 # run this twice for best effect
 def _test():
     import time
-    
+
     def sleep(n):
         print "sleeping for %d seconds" % n
         time.sleep(n)

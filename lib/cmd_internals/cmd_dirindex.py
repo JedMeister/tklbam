@@ -1,14 +1,14 @@
 #!/usr/lib/tklbam-pypy2/bin/pypy
-# 
+#
 # Copyright (c) 2010-2012 Liraz Siri <liraz@turnkeylinux.org>
-# 
+#
 # This file is part of TKLBAM (TurnKey GNU/Linux BAckup and Migration).
-# 
+#
 # TKLBAM is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
 # published by the Free Software Foundation; either version 3 of
 # the License, or (at your option) any later version.
-# 
+#
 """
 Print a list of files that have changed
 
@@ -35,7 +35,7 @@ def usage(e=None):
 
 def main():
     try:
-        opts, args = getopt.gnu_getopt(sys.argv[1:], 'i:ch', 
+        opts, args = getopt.gnu_getopt(sys.argv[1:], 'i:ch',
                                        ['create', 'input='])
     except getopt.GetoptError, e:
         usage(e)
@@ -58,7 +58,7 @@ def main():
 
     path_index = args[0]
     paths = args[1:]
-    
+
     if opt_input:
         if opt_input != '-':
             with open(opt_input) as fob:

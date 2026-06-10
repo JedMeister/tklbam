@@ -96,7 +96,7 @@ def _match_name(sql):
     m = re.search(r'`(.*?)`', sql)
     if m:
         return m.group(1)
-    
+
 def _parse_statements(fh, delimiter=';'):
     statement = ""
     for line in fh.xreadlines():
@@ -278,7 +278,7 @@ SET character_set_client = @saved_cs_client;
 /*!50001 SET @saved_col_connection     = @@collation_connection */;
 /*!50001 SET character_set_client      = utf8 */;
 /*!50001 SET character_set_results     = utf8 */;
-$sql    
+$sql
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
@@ -308,7 +308,7 @@ $sql
                     sql = fob.read().strip()
                 return Template(self.TPL_POST).substitute(name=self.name, sql=sql)
             post = property(post)
-            
+
         def __init__(self, myfs, fname):
             self.paths = self.Paths(join(myfs.path, fname))
             with open(self.paths.init) as fob:
@@ -447,7 +447,7 @@ DELIMITER ;
                 if skip_extended_insert:
                     for  row in self.rows:
                         print >> fh, insert_prefix + "(%s);" % row
-                        
+
                 else:
                     rows = ( "(%s)" % row for row in self.rows )
                     row_chunks = chunkify(rows, ",\n", max_extended_insert - len(insert_prefix + ";"))
@@ -496,7 +496,7 @@ DELIMITER ;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 """
 
-    def __init__(self, path, limits=[], 
+    def __init__(self, path, limits=[],
                  skip_extended_insert=False,
                  add_drop_database=False,
                  max_extended_insert=None):
@@ -596,7 +596,7 @@ def restore(myfs, etc, **kws):
     else:
         if not MysqlService.is_running():
             raise Error("MySQL service not running")
-            
+
         if not MysqlService.is_accessible():
             mna = MysqlNoAuth()
 
@@ -614,7 +614,7 @@ def restore(myfs, etc, **kws):
         MysqlService.reload()
 
     fh.close()
-    
+
 class MysqlService:
     INIT_SCRIPT = "/etc/init.d/mysql"
     PID_FILE = '/var/run/mysqld/mysqld.pid'
@@ -746,7 +746,7 @@ class MysqlNoAuth:
             os.kill(self.command.pid, signal.SIGINT)
             self.command.wait()
             self.command = None
-            
+
         os.chmod(self.PATH_VARRUN, self.orig_varrun_mode)
 
         if self.was_running:

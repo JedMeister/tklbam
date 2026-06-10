@@ -1,14 +1,14 @@
 #!/usr/lib/tklbam-pypy2/bin/pypy
-# 
+#
 # Copyright (c) 2010-2012 Liraz Siri <liraz@turnkeylinux.org>
-# 
+#
 # This file is part of TKLBAM (TurnKey GNU/Linux BAckup and Migration).
-# 
+#
 # TKLBAM is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
 # published by the Free Software Foundation; either version 3 of
 # the License, or (at your option) any later version.
-# 
+#
 """
 Install list of new packages that are available in apt-cache.
 
@@ -54,7 +54,7 @@ def parse_input(inputfile):
 
 def main():
     try:
-        opts, args = getopt.gnu_getopt(sys.argv[1:], 'i:svh', 
+        opts, args = getopt.gnu_getopt(sys.argv[1:], 'i:svh',
                                        ['input=', 'simulate', 'verbose'])
     except getopt.GetoptError, e:
         usage(e)

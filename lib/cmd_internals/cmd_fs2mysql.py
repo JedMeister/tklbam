@@ -1,14 +1,14 @@
 #!/usr/lib/tklbam-pypy2/bin/pypy
-# 
+#
 # Copyright (c) 2010-2012 Liraz Siri <liraz@turnkeylinux.org>
-# 
+#
 # This file is part of TKLBAM (TurnKey GNU/Linux BAckup and Migration).
-# 
+#
 # TKLBAM is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
 # published by the Free Software Foundation; either version 3 of
 # the License, or (at your option) any later version.
-# 
+#
 """
 Map a filesystem created by mysql2fs back to MySQL
 
@@ -21,7 +21,7 @@ Options:
 
 Supports the following subset of mysql(1) options:
 
-    -u --user=USER 
+    -u --user=USER
     -p --password=PASS
 
        --defaults-file=PATH
@@ -45,7 +45,7 @@ def usage(e=None):
 
 def main():
     try:
-        opts, args = getopt.gnu_getopt(sys.argv[1:], 'u:p:v', 
+        opts, args = getopt.gnu_getopt(sys.argv[1:], 'u:p:v',
                                        ['verbose', 'tofile=',
                                         'skip-extended-insert',
                                         'add-drop-database',
@@ -100,7 +100,7 @@ def main():
     if opt_verbose:
         pass
 
-    mysql.fs2mysql(fh, myfs, limits, callback, 
+    mysql.fs2mysql(fh, myfs, limits, callback,
                    opt_skip_extended_insert,
                    opt_add_drop_database)
     fh.close()

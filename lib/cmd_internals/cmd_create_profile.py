@@ -1,16 +1,16 @@
 #!/usr/lib/tklbam-pypy2/bin/pypy
-# 
+#
 # Copyright (c) 2013 Liraz Siri <liraz@turnkeylinux.org>
-# 
+#
 # This file is part of TKLBAM (TurnKey GNU/Linux BAckup and Migration).
-# 
+#
 # TKLBAM is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
 # published by the Free Software Foundation; either version 3 of
 # the License, or (at your option) any later version.
-# 
+#
 """
-Create custom backup profile 
+Create custom backup profile
 
 What is a backup profile?
 
@@ -26,7 +26,7 @@ What file paths should a backup profile keep track of?
 
 It depends on what you're using TKLBAM for. If you want to use it like TurnKey
 take a look at the dirindex.conf file in the "core" profile, which all
-appliance backup profiles inherit from. 
+appliance backup profiles inherit from.
 
 In principle, we want to track changes to the user-servicable, customizable
 parts of the filesystem (e.g., /etc /root /home /var /usr/local /var /opt /srv)
@@ -51,8 +51,8 @@ appliance in a new location. But more likely you'll end up mixing the old and
 new filesystems and break the package management system.
 
 Arguments:
-    
-    <conf>          Path to configuration file with list of includes/exclude paths 
+
+    <conf>          Path to configuration file with list of includes/exclude paths
                     ('-' for stdin input)
 
 Options:
@@ -123,7 +123,7 @@ class ProfileGenerator:
     def _get_dirindex(path_dirindex_conf, path_rootfs):
         with open(path_dirindex_conf) as fob:
             paths = dirindex.read_paths(fob)
-        paths = [ re.sub(r'^(-?)', '\\1' + path_rootfs, path) 
+        paths = [ re.sub(r'^(-?)', '\\1' + path_rootfs, path)
                   for path in paths ]
 
         tmp = TempFile()
@@ -152,8 +152,8 @@ class ProfileGenerator:
                 yield control
 
         def parse_control(control):
-            return dict([ line.split(': ', 1) 
-                          for line in control.splitlines() 
+            return dict([ line.split(': ', 1)
+                          for line in control.splitlines()
                           if re.match(r'^Package|Status', line) ])
 
         packages = []
@@ -210,9 +210,9 @@ def parse_conf(fh):
 def main():
 
     try:
-        opts, args = getopt.gnu_getopt(sys.argv[1:], 'fh', ['force', 'help', 
+        opts, args = getopt.gnu_getopt(sys.argv[1:], 'fh', ['force', 'help',
                                                             'root=',
-                                                            'no-dirindex', 
+                                                            'no-dirindex',
                                                             'no-packages'])
     except getopt.GetoptError, e:
         usage(e)

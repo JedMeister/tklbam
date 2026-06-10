@@ -1,14 +1,14 @@
 #!/usr/lib/tklbam-pypy2/bin/pypy
-# 
+#
 # Copyright (c) 2010-2012 Liraz Siri <liraz@turnkeylinux.org>
-# 
+#
 # This file is part of TKLBAM (TurnKey GNU/Linux BAckup and Migration).
-# 
+#
 # TKLBAM is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
 # published by the Free Software Foundation; either version 3 of
 # the License, or (at your option) any later version.
-# 
+#
 """
 Fix ownership and permissions of files according to delta specification
 
@@ -18,7 +18,7 @@ Options:
 
     -v --verbose               Print list of fixes
     -s --simulate              Print list of fixes, don't apply them
-    
+
     <mapspec> := <key>,<val>[:<key>,<val> ...]
 """
 import _init_sys_path
@@ -39,7 +39,7 @@ def usage(e=None):
 
 def main():
     try:
-        opts, args = getopt.gnu_getopt(sys.argv[1:], 'u:g:svh', 
+        opts, args = getopt.gnu_getopt(sys.argv[1:], 'u:g:svh',
                                        ['uid-map=', 'gid-map=', 'simulate', 'verbose'])
     except getopt.GetoptError, e:
         usage(e)

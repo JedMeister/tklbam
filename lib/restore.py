@@ -80,7 +80,7 @@ class Restore:
                 print "SKIPPING MYSQL DATABASE RESTORE: " + str(e)
 
         if exists(self.extras.pgfs):
-        
+
             print "\n" + fmt_title("DATABASE - Unserializing PgSQL databases from " + self.extras.pgfs)
 
             if self.simulate:

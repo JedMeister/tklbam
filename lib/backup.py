@@ -208,7 +208,7 @@ class Backup:
         if self.verbose:
             print s
 
-    def __init__(self, profile, overrides, 
+    def __init__(self, profile, overrides,
                  skip_files=False, skip_packages=False, skip_database=False, resume=False, verbose=True, extras_root="/"):
 
         print "# backup.Backup"
