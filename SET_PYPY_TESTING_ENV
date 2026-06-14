@@ -1,0 +1,33 @@
+# source this file to set up env vars to run pypy in shell
+# useful for testing py2 commands in interactive python prompt
+#
+# NOTE: 'source' this file - DON'T try to execute it
+
+_PYPY_BIN=/usr/lib/tklbam-pypy2/bin
+
+if [[ "$PATH" != *"$_PYPY_BIN"* ]]; then
+    export PATH="$_PYPY_BIN:$PATH"
+    echo "updating env:"
+else
+    echo "pypy already in PATH:"
+fi
+echo "PATH=$PATH"
+echo
+
+# lib path is the same as bin path
+_PYPY_LD_LIB="$_PYPY_BIN"
+
+if [[ -z "$LD_LIBRARY_PATH" ]]; then
+    export LD_LIBRARY_PATH="$_PYPY_LD_LIB"
+    echo "updating env:"
+elif [[ "$LD_LIBRARY_PATH" != *"$_PYPY_LD_LIB"* ]]; then
+    export LD_LIBRARY_PATH="$_PYPY_LD_LIB:$LD_LIBRARY_PATH"
+    echo "updating env:"
+else
+    echo "pypy libs already in LD_LIBRARY_PATH"
+fi
+echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+
+unset _PYPY_BIN _PYPY_LD_LIB
+
+# vim:ft=bash

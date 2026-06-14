@@ -1,11 +1,11 @@
-#!/usr/bin/python2
+#!/usr/lib/tklbam-pypy2/bin/pypy
 import os
 import sys
 import time
 import getopt
 from os.path import *
 
-import simplejson
+import json
 
 SESSION_FILE = "/tmp/session"
 
@@ -17,11 +17,13 @@ class Session:
 
     @classmethod 
     def load(cls):
-        return simplejson.loads(file(cls.SESSION_FILE).read())
+        with open(cls.SESSION_FILE) as fob:
+            return json.loads(fob.read())
 
     @classmethod 
     def save(cls, conf):
-        file(cls.SESSION_FILE, "w").write(simplejson.dumps(conf))
+        with open(cls.SESSION_FILE, "w") as fob:
+            fob.write(simplejson.dumps(conf))
 
     @classmethod 
     def remove(cls):

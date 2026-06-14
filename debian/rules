@@ -1,9 +1,27 @@
 #! /usr/bin/make -f
 
-include /usr/share/dpkg/pkg-info.mk
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+progname=$(shell awk '/^Source/ {print $$2}' debian/control)
+buildroot=debian/$(progname)
+
+deproot=$(progname)/deproot
+tmp=debian/tmp
 
 %:
-	dh $@ --with python2 --buildsystem=makefile
+	if ! mount | grep -q /proc; then \
+		echo "### ERROR: /proc must be mounted"; \
+		exit 1; \
+	fi
+	dh $@
 
-override_dh_auto_install:
-	dh_auto_install -- prefix=debian/$(DEB_SOURCE)/usr
+execute_before_dh_clean:
+	# dh_clean will clean all other build files (in debian/tmp)
+	rm -rf lib/deps
+
+override_dh_auto_build:
+	./duct-tape-deps.sh
+
+# don't try to link libs - won't work because we build against pypy
+override_dh_shlibdeps:
+override_dh_makeshlibs:

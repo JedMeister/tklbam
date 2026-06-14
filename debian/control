@@ -5,26 +5,47 @@ Maintainer: Liraz Siri <liraz@turnkeylinux.org>
 Build-Depends:
  debhelper (>= 10),
  dh-exec,
- dh-python2 (>= 4.20201102+turnkey0),
- python-all (>= 2.6.6-3~),
+ libcurl4-openssl-dev,
+ curl,
+ tar,
+ librsync-dev (>= 0.9.6),
+ libssl-dev,
+ libgmp-dev,
+ turnkey-pypy2 | turnkey-pypy2-full,
+ librsync2t64,
 Standards-Version: 4.0.0
-X-Python-Version: >= 2.6
 
 Package: tklbam
-Architecture: all
+Architecture: any
+Conflicts:
+ tklbam-duplicity,
+ tklbam-python-boto,
+ turnkey-pylib,
+ python-pycurl,
+ pycurl-wrapper,
+ tklbam (<= 1.4.7),
+Replaces:
+ tklbam-duplicity,
+ tklbam-python-boto,
+ turnkey-pylib,
+ python-pycurl,
+ pycurl-wrapper,
+ tklbam (<= 1.4.7),
 Depends:
  ca-certificates,
  ${misc:Depends},
  gnupg,
- ntpdate,
- pycurl-wrapper (>= 1.2),
- pycurl-wrapper (<< 2.0),
+ ntpsec-ntpdate,
+ duplicity,
+ turnkey-python3-boto3 | python3-boto3,
+ turnkey-pypy2 | turnkey-pypy2-full | turnkey-pypy2-dbg,
  gpg (>= 2.2.12),
- ${python:Depends},
- python-crypto,
- python-simplejson,
- tklbam-duplicity (>=  0.6.18),
- tklbam-python-boto (>= 2.3.0-2turnkey),
- tklbam-squid (>= 2.7.STABLE9-2.1turnkey+25),
- turnkey-pylib (>= 0.5),
+ tar,
+ tklbam-squid,
 Description: TurnKey GNU/Linux Backup and Migration agent
+ A backup and data migration tool to backup and/or migrate
+ files, directories and database data (mysql/maridb &
+ postgresql).
+ .
+ Primarily TKLBAM is intended for use on TurnKey GNU/Linux
+ but it should also work on any Debian based OS.

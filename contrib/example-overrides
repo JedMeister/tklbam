@@ -3,64 +3,83 @@
 ###########################
 #
 # FILESYSTEM OVERRIDES
-# 
+# ====================
+#
 #   Override default configurations in /var/lib/tklbam/profile/dirindex.conf
-#   
-#   This includes or excludes additional files and directories from being 
+#
+#   This includes or excludes additional files and directories from being
 #   backed up if they've changed since installation.
 # 
 # Format
+# ------
 #
 #   -?/path/to/include/or/exclude
-# 
+#
 # Gotchas
-# 
+# -------
+#
 #   * If you add a directory handled by package management this may break
 #     package management on the system you restore to.
-#   
-#   * Only changes (e.g., new files, edited files, deleted files) from the 
+#
+#   * Only changes (e.g., new files, edited files, deleted files) from the
 #     base installation are included in a backup.
 #
-# Examples
+# Example - exclude log files in /var/www
+# ---------------------------------------
 #
-#   (exclude log files in /var/www) 
 #   -/var/www/*/logs
-#   
-#   (ignores changes to webmin configuration) 
+#
+# Example - ignore changes to webmin configuration
+# ------------------------------------------------
+#
 #   -/etc/webmin
-#   
-#   (include the contents of an external hard disk...) 
+#
+# Example - include the contents of an external hard disk
+# -------------------------------------------------------
+#
 #   /mnt/images
- 
- 
+#
+# Example - exclude /root/projects except for /root/projects/special_project
+#
+#   -/root/projects
+#   /root/projects/special_project
+
+
 # DATABASE OVERRIDES
-# 
-#   By default ALL databases are backed up. Adding a positive override 
-#   changes the default behavior so that only the database or table 
+# ==================
+#
+#   By default ALL databases are backed up. Adding a positive override
+#   changes the default behavior so that only the database or table
 #   specified in the override is included in the backup.
-#   
+#
 #   You can mix positive overrides with negative overrides.
-# 
+#
 # MySQL/MariaDB Format
+# --------------------
 #
 #   -?mysql:database[/table]
-# 
-# MySQL/MariaDB Examples
-# 
-#   (exclude Drupal10 sessions table)
+#
+# MySQL/MariaDB Example - exclude Drupal10 sessions table
+# -------------------------------------------------------
+#
 #   -mysql:drupal10/sessions
-# 
-#   (only include drupal10 database)
+#
+# MySQL/MariaDB Example - only include drupal10 database
+# ------------------------------------------------------
+#
 #   mysql:drupal10
 #
 # PosgreSQL Format
+# ----------------
 #
 #   -?pgsql:database[/table]
 #
-# PosgreSQL Examples
+# PosgreSQL Example - exclude my_db test table
+# --------------------------------------------
 #
-#   (exclude my_db test table)
 #   -pgsql:my_db:test
 #
-#   (only include my_db database)
+# PosgreSQL Example - only include my_db database
+# -----------------------------------------------
+#
 #   pgsql:my_db

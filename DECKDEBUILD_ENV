@@ -1,0 +1,6 @@
+# TKLBAM requires /proc
+DECKDEBUILD_MOUNT_PROC=true
+
+# until we get the deckdebuild faketime working properly, compiled packages
+# requre it be disabled
+DECKDEBUILD_FAKETIME=false
