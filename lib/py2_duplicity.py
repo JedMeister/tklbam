@@ -29,6 +29,9 @@ def log(message):
     print "LOG: " + message
 
 def _find_duplicity_pylib(path):
+    log("WTF: " + path)
+    log("hardcoding duplicity path: /usr/bin/duplicity")
+    return "/usr/bin/duplicity"
     if not isdir(path):
         return None
 
@@ -132,6 +135,7 @@ class Duplicity:
             executil.system(shell)
 
         log("\n// duplicity started...")
+        log("\n * self.command: " + str(self.command))
         child = Popen(self.command, env=env)
         exitcode = child.wait()
         log("\n// duplicity stopped...")
