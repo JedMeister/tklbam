@@ -100,7 +100,7 @@ class Duplicity:
                 else:
                     print "WARNING /var/lib/tklbam/iam_role not found"
                     print "Not setting AWS_ROLE_ARN env var"
-                accesskey, secretkey, sessiontoken, expiration
+                #accesskey, secretkey, sessiontoken, expiration
                 env['AWS_ACCESS_KEY_ID'] = creds["accesskey"]
                 env['AWS_SECRET_ACCESS_KEY'] = creds["secretkey"]
                 env['AWS_SESSION_TOKEN'] = creds["sessiontoken"]
