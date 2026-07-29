@@ -164,7 +164,7 @@ class Target(AttrDict):
             region = addr_split[2][3:-14]
             del addr_split[2]
             address = "/".join(addr_split)
-            self.env["AWS_REGION"] = region
+            self["AWS_REGION"] = region
         else:
             print "ERROR: could not determine AWS region - this may cause failure"
         self.region = region
