@@ -24,6 +24,10 @@ RLIMIT_NOFILE_MAX = 8192
 
 TARGET_ADDRESS = os.environ.get("TKLBAM_BUCKET", "")
 
+# not sure why this log function is missing?!
+def log(message):
+    print "LOG: " + message
+
 def _find_duplicity_pylib(path):
     if not isdir(path):
         return None
