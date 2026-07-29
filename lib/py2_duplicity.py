@@ -45,7 +45,8 @@ PATH_DEPS = os.environ.get('TKLBAM_DEPS', '/usr/lib/tklbam/deps')
 PATH_DEPS_BIN = join(PATH_DEPS, "bin")
 PATH_DEPS_PYLIB = _find_duplicity_pylib(PATH_DEPS)
 
-DEFAULT_DUPLICITY = join(PATH_DEPS_BIN, "duplicity")
+# hard code default path to debian package duplicity executable
+DEFAULT_DUPLICITY = "/usr/bin/duplicity"
 DUPLICITY = os.environ.get('DUPLICITY', DEFAULT_DUPLICITY)
 
 TKLBAM_DUPLICITY_LIB = join(PATH_DEPS, "lib", "duplicity")
