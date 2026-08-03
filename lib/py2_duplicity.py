@@ -24,13 +24,8 @@ RLIMIT_NOFILE_MAX = 8192
 
 TARGET_ADDRESS = os.environ.get("TKLBAM_BUCKET", "")
 
-# not sure why this log function is missing?!
-def log(message):
-    print "LOG: " + message
 
 def _find_duplicity_pylib(path):
-    log("WTF: " + path)
-    log("hardcoding duplicity path: /usr/bin/duplicity")
     return "/usr/bin/duplicity"
     if not isdir(path):
         return None
@@ -108,7 +103,6 @@ class Duplicity:
                 else:
                     print "WARNING /var/lib/tklbam/iam_role not found"
                     print "Not setting AWS_ROLE_ARN env var"
-                #accesskey, secretkey, sessiontoken, expiration
                 env['AWS_ACCESS_KEY_ID'] = creds["accesskey"]
                 env['AWS_SECRET_ACCESS_KEY'] = creds["secretkey"]
                 env['AWS_SESSION_TOKEN'] = creds["sessiontoken"]
