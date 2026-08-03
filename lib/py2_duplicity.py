@@ -80,8 +80,10 @@ class Duplicity:
         opts = [ "--%s=%s" % (key, val) for key, val in opts ]
         self.command = [DUPLICITY] + opts + list(args)
 
-    def run(self, passphrase, creds=None, debug=False):
+    def run(self, passphrase, creds=None, debug=False, log=None):
         sys.stdout.flush()
+        if log is None:
+            log = lambda s: None
 
         env = os.environ.copy()
 
@@ -270,7 +272,7 @@ class Uploader(AttrDict):
             log(cleanup_command)
 
             if not dry_run:
-                cleanup_command.run(target.secret, target.credentials)
+                cleanup_command.run(target.secret, target.credentials, log=log)
 
             log("\n")
 
