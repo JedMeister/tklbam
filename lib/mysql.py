@@ -613,7 +613,7 @@ def restore(myfs, etc, **kws):
         shutil.copy(join(etc, basename(PATH_DEBIAN_CNF)), PATH_DEBIAN_CNF)
         MysqlService.reload()
 
-    fh.close()
+    mysql_fh.close()
 
 class MysqlService:
     INIT_SCRIPT = "/etc/init.d/mysql"
