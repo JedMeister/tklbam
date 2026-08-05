@@ -192,7 +192,7 @@ class Backup:
                 if mysql.MysqlService.is_running():
                     self._log("\n" + fmt_title("Serializing MySQL database to " + extras.myfs, '-'))
                     mysql.backup(extras.myfs, extras.etc.mysql,
-                                 limits=conf.overrides.mydb, callback=mysql.cb_print()) if self.verbose else None
+                                 limits=conf.overrides.mydb, callback=mysql.cb_print() if self.verbose else None)
 
             except mysql.Error:
                 pass
