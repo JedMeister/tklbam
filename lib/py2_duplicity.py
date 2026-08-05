@@ -88,7 +88,6 @@ class Duplicity:
         env = os.environ.copy()
 
         if creds:
-            #print "### creds: " + str(creds)
             if creds.type in ('devpay', 'iamuser'):
                 env['AWS_ACCESS_KEY_ID'] = creds.accesskey
                 env['AWS_SECRET_ACCESS_KEY'] = creds.secretkey
@@ -100,18 +99,12 @@ class Duplicity:
             elif creds.type == 'iamrole':
                 # /var/lib/tklbam/iam_role should not be needed; this part was
                 # added early in the v19.x testing and should be removed...
-                #print "### USING IAM ROLE for S3 auth"
                 if exists("/var/lib/tklbam/iam_role"):
                     with open("/var/lib/tklbam/iam_role") as fob:
                         self.env['AWS_ROLE_ARN'] = fob.read().strip()
-                #else:
-                    #print "WARNING /var/lib/tklbam/iam_role not found"
-                    #print "Not setting AWS_ROLE_ARN env var"
                 env['AWS_ACCESS_KEY_ID'] = creds["accesskey"]
                 env['AWS_SECRET_ACCESS_KEY'] = creds["secretkey"]
                 env['AWS_SESSION_TOKEN'] = creds["sessiontoken"]
-                # this isn't actually used, but for good measure...
-                #env['AWS_SESSION_EXPIRATION'] = creds["expiration"]
 
         env['PASSPHRASE'] = passphrase
 

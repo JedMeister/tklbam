@@ -150,7 +150,6 @@ class Conf(AttrDict):
         self.address = None
         self.force_profile = None
         self.overrides = Limits.fromfile(self.paths.overrides)
-        #print "# conf.Conf.overrides (__init__): " + str(self.overrides)
 
         self.volsize = duplicity.Uploader.VOLSIZE
         self.s3_parallel_uploads = duplicity.Uploader.S3_PARALLEL_UPLOADS
