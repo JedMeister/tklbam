@@ -159,6 +159,9 @@ class MyFS_Writer(MyFS):
             print >> self.rows_fh, re.sub(r'.*?VALUES \((.*)\);', '\\1', sql)
             self.rows_fh.flush()
 
+        def close(self):
+            self.rows_fh.close()
+
         def add_trigger(self, sql):
             with open(self.paths.triggers, "a") as fob:
                 print >> fob, sql + "\n"
@@ -192,6 +195,8 @@ class MyFS_Writer(MyFS):
                 if not database:
                     continue
 
+                if table:
+                    table.close()
                 table = None
 
             if not database:
@@ -208,6 +213,9 @@ class MyFS_Writer(MyFS):
 
             elif statement.startswith("CREATE TABLE"):
                 table_name = _match_name(statement)
+
+                if table:
+                    table.close()
 
                 table = self.Table(database, table_name, statement)
                 if (database.name, table_name) in self.limits:
@@ -226,6 +234,9 @@ class MyFS_Writer(MyFS):
             elif not table_ignore_inserts and statement.startswith("INSERT INTO"):
                 assert _match_name(statement) == table.name
                 table.add_row(statement)
+
+        if table:
+            table.close()
 
 def mysql2fs(fh, outdir, limits=[], callback=None):
     MyFS_Writer(outdir, limits).fromfile(fh, callback)
