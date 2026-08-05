@@ -52,9 +52,11 @@ class Restore:
         if simulate:
             rollback = False
 
-        with open(self.extras.backup_conf) as fob:
-            self.conf = AttrDict(json.loads(fob.read())) \
-                    if exists(self.extras.backup_conf) else None
+        if exists(self.extras.backup_conf):
+            with open(self.extras.backup_conf) as fob:
+                self.conf = AttrDict(json.loads(fob.read()))
+        else:
+            self.conf = None
 
         self.simulate = simulate
         self.rollback = Rollback.create() if rollback else None

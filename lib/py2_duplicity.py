@@ -24,7 +24,9 @@ RLIMIT_NOFILE_MAX = 8192
 
 TARGET_ADDRESS = os.environ.get("TKLBAM_BUCKET", "")
 
+
 def _find_duplicity_pylib(path):
+    return "/usr/bin/duplicity"
     if not isdir(path):
         return None
 
@@ -38,7 +40,8 @@ PATH_DEPS = os.environ.get('TKLBAM_DEPS', '/usr/lib/tklbam/deps')
 PATH_DEPS_BIN = join(PATH_DEPS, "bin")
 PATH_DEPS_PYLIB = _find_duplicity_pylib(PATH_DEPS)
 
-DEFAULT_DUPLICITY = join(PATH_DEPS_BIN, "duplicity")
+# hard code default path to debian package duplicity executable
+DEFAULT_DUPLICITY = "/usr/bin/duplicity"
 DUPLICITY = os.environ.get('DUPLICITY', DEFAULT_DUPLICITY)
 
 TKLBAM_DUPLICITY_LIB = join(PATH_DEPS, "lib", "duplicity")
@@ -77,13 +80,14 @@ class Duplicity:
         opts = [ "--%s=%s" % (key, val) for key, val in opts ]
         self.command = [DUPLICITY] + opts + list(args)
 
-    def run(self, passphrase, creds=None, debug=False):
+    def run(self, passphrase, creds=None, debug=False, log=None):
         sys.stdout.flush()
+        if log is None:
+            log = lambda s: None
 
         env = os.environ.copy()
 
         if creds:
-            print "### creds: " + str(creds)
             if creds.type in ('devpay', 'iamuser'):
                 env['AWS_ACCESS_KEY_ID'] = creds.accesskey
                 env['AWS_SECRET_ACCESS_KEY'] = creds.secretkey
@@ -93,19 +97,14 @@ class Duplicity:
                                                     else creds.sessiontoken)
 
             elif creds.type == 'iamrole':
-                print "### USING IAM ROLE for S3 auth"
+                # /var/lib/tklbam/iam_role should not be needed; this part was
+                # added early in the v19.x testing and should be removed...
                 if exists("/var/lib/tklbam/iam_role"):
                     with open("/var/lib/tklbam/iam_role") as fob:
                         self.env['AWS_ROLE_ARN'] = fob.read().strip()
-                else:
-                    print "WARNING /var/lib/tklbam/iam_role not found"
-                    print "Not setting AWS_ROLE_ARN env var"
-                 accesskey, secretkey, sessiontoken, expiration
                 env['AWS_ACCESS_KEY_ID'] = creds["accesskey"]
                 env['AWS_SECRET_ACCESS_KEY'] = creds["secretkey"]
                 env['AWS_SESSION_TOKEN'] = creds["sessiontoken"]
-                # this isn't actually used, but for good measure...
-                #env['AWS_SESSION_EXPIRATION'] = creds["expiration"]
 
         env['PASSPHRASE'] = passphrase
 
@@ -128,6 +127,7 @@ class Duplicity:
             executil.system(shell)
 
         log("\n// duplicity started...")
+        log("\n * self.command: " + str(self.command))
         child = Popen(self.command, env=env)
         exitcode = child.wait()
         log("\n// duplicity stopped...")
@@ -164,7 +164,7 @@ class Target(AttrDict):
             region = addr_split[2][3:-14]
             del addr_split[2]
             address = "/".join(addr_split)
-            self.env["AWS_REGION"] = region
+            self["AWS_REGION"] = region
         else:
             print "ERROR: could not determine AWS region - this may cause failure"
         self.region = region
@@ -267,7 +267,7 @@ class Uploader(AttrDict):
             log(cleanup_command)
 
             if not dry_run:
-                cleanup_command.run(target.secret, target.credentials)
+                cleanup_command.run(target.secret, target.credentials, log=log)
 
             log("\n")
 

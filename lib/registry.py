@@ -318,7 +318,6 @@ class BackupSessionConf(AttrDict):
     def __init__(self, d={}):
         AttrDict.__init__(self, d)
         self.overrides = conf.Limits(self.overrides)
-        print "registry.BackupSessionConf.overrides (__init__): " + str(self.overrides)
 
 registry = _Registry()
 

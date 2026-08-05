@@ -11,7 +11,7 @@
 import sys
 import os
 import re
-import commands
+import subprocess
 
 from fnmatch import fnmatch
 
@@ -73,11 +73,12 @@ class AptCache(set):
     Error = Error
 
     def __init__(self, packages):
-        command = "apt-cache show " + " ".join(packages)
-        status, output = commands.getstatusoutput(command)
-        status = os.WEXITSTATUS(status)
+        argv = ["apt-cache", "show"] + list(packages)
+        proc = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        output, _ = proc.communicate()
+        status = proc.returncode
         if status not in (0, 100):
-            raise self.Error("execution failed (%d): %s\n%s" % (status, command, output))
+            raise self.Error("execution failed (%d): %s\n%s" % (status, " ".join(argv), output))
 
         cached = [ line.split()[1]
                    for line in output.split("\n") if
@@ -140,8 +141,10 @@ class Installer:
         self.skipping.sort()
 
         if self.installable:
-            self.command = "apt-get install --assume-yes " + " ".join(self.installable)
+            self.argv = ["apt-get", "install", "--assume-yes"] + self.installable
+            self.command = " ".join(self.argv)
         else:
+            self.argv = None
             self.command = None
 
     def __call__(self, interactive=False):
@@ -150,15 +153,15 @@ class Installer:
         if not self.installable:
             raise Error("no installable packages")
 
-        command = self.command
+        env = os.environ.copy()
         if not interactive:
-            command = "DEBIAN_FRONTEND=noninteractive " + command
+            env["DEBIAN_FRONTEND"] = "noninteractive"
 
         sys.stdout.flush()
         sys.stderr.flush()
 
         packages_before = Packages()
-        retval = os.system(command)
+        retval = subprocess.call(self.argv, env=env)
         packages_after = Packages()
 
         self.installed = packages_after - packages_before

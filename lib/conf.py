@@ -126,9 +126,9 @@ class Conf(AttrDict):
                                 for opt in ('files', 'database', 'packages') ]
         if name in backup_skip_options:
             if val not in (True, False):
-                if re.match(r'^true|1|yes$', val, re.IGNORECASE):
+                if re.match(r'^(true|1|yes)$', val, re.IGNORECASE):
                     val = True
-                elif re.match(r'^false|0|no$', val, re.IGNORECASE):
+                elif re.match(r'^(false|0|no)$', val, re.IGNORECASE):
                     val = False
                 else:
                     raise self.Error("bad bool value '%s'" % val)
@@ -150,7 +150,6 @@ class Conf(AttrDict):
         self.address = None
         self.force_profile = None
         self.overrides = Limits.fromfile(self.paths.overrides)
-        print "# conf.Conf.overrides (__init__): " + str(self.overrides)
 
         self.volsize = duplicity.Uploader.VOLSIZE
         self.s3_parallel_uploads = duplicity.Uploader.S3_PARALLEL_UPLOADS

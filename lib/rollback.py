@@ -10,6 +10,7 @@
 #
 import os
 import sys
+import subprocess
 from os.path import *
 
 import stat
@@ -133,7 +134,9 @@ class Rollback:
 
         purge_packages = current_packages & rollback_packages
         if purge_packages:
-            os.system("DEBIAN_FRONTEND=noninteractive dpkg --purge " + " ".join(purge_packages))
+            env = os.environ.copy()
+            env["DEBIAN_FRONTEND"] = "noninteractive"
+            subprocess.call(["dpkg", "--purge"] + list(purge_packages), env=env)
 
     def rollback_database(self):
         if exists(self.paths.myfs):

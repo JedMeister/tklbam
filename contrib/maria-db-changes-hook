@@ -8,12 +8,25 @@
 op=$1
 state=$2
 
-echo "HOOK $0 :: op=$op state=$state pwd=$(pwd) :: "
-echo "TKLBAM_RESTORE_PROFILE_ID: $TKLBAM_RESTORE_PROFILE_ID"
+HOOK="[HOOK:$(basename "$0")]"
 
-fatal() { echo "[$(basename "$0")] FATAL: $*" >&2; exit 1; }
-warn() { echo "[$(basename "$0")] WARN: $*" >&2; }
-info() { echo "[$(basename "$0")] INFO: $*"; }
+fatal() {
+    echo "[$(basename "$0")] FATAL: $*" >&2
+    logger -t tklbam -p err "$*"
+    exit 1
+}
+warn() {
+    echo "$HOOK WARN: $*" >&2
+    logger -t tklbam -p warn "$HOOK $*"
+}
+
+info() {
+    local quiet=$1
+    shift
+    # if quiet set don't echo; just log
+    [[ -n "$quiet" ]] || echo "$HOOK INFO: $*"
+    logger -t tklbam -p info "$HOOK $*"
+}
 
 migrate_db_not_set() {
     warn "MIGRATE_DB env var not set; DB restore of MySQL/MariaDB from TKL v16.x and earlier may fail"
@@ -32,38 +45,39 @@ check_version() {
     fi
 }
 
+info quiet ":: op=$op state=$state pwd=$(pwd) ::"
+info quiet "TKLBAM_RESTORE_PROFILE_ID: $TKLBAM_RESTORE_PROFILE_ID"
+
+if [[ "$(check_version)" == "skip_migration" ]]; then
+    info quiet "no DB migration required"
+    exit 0
+elif [[ ! -x /usr/bin/mysql ]] && [[ ! -x /usr/bin/mariadb ]]; then
+    info quiet "No MySQL/MariaDB executalbe found - assuming no MySQL/MariaDB DB"
+    exit 0
+fi
+
 if [[ "$state" == "pre" ]] && [[ "$op" == "restore" ]]; then
-    info "hook invoked before Duplicity downloads backup archive. Extras path = $(pwd)"
-    info "Nothing to do yet (DB migration may be required)"
-
+    info "invoked before Duplicity downloads backup archive."
+    info quiet "Extras path = $(pwd)"
+    info "nothing to do yet (DB migration may be required after restore)"
 elif [[ "$state" == "inspect" ]] && [[ "$op" == "restore" ]]; then
-
-    info "hook invoked after Duplicity downloads backup archive. Extras path = $(pwd)"
-
-    if [[ "$(check_version)" == 'skip_migration' ]]; then
-        info "DB migration not required, skipping"
-    elif [[ -x "/usr/bin/mysql" ]]; then
-        info "Migration of MySQL/MariaDB database detected, working around possible issue"
-        mysqldump mysql > /tmp/mysql_db.sql
-        info "'mysql' DB dumped to /tmp/mysql_db.sql (in case you need to restore) - or just run 'tklbam-restore-rollback'"
-        mysql -e "DROP TABLE IF EXISTS mysql.global_priv; DROP VIEW IF EXISTS mysql.user;"
-        info "Table mysql.global_priv & view mysql.user dropped, continuing restore"
-    else
-        warn "/usr/bin/mysql not found (or not executable) - assuming no MySQL/MariaDB database"
-    fi
-
-
+    info "invoked before Duplicity downloads backup archive."
+    info quiet "Extras path = $(pwd)"
+    warn "legacy MySQL/MariaDB DB detected"
+    warn "working around possible restore issue"
+    mysqldump mysql > /tmp/mysql_db.sql || fatal "mysqldump failed"
+    info "'mysql' DB dumped to /tmp/mysql_db.sql"
+    mysql -e "DROP TABLE IF EXISTS mysql.global_priv; DROP VIEW IF EXISTS mysql.user;" \
+        || fatal "dropping mysql.view failed"
+    info "Table mysql.global_priv & view mysql.user dropped, continuing restore"
 elif [[ "$state" == "post" ]]  && [[ "$op" == "restore" ]]; then
-
-    info "hook invoked after backup restore. Extras path = $(pwd)"
-    if [[ "$(check_version)" == 'skip_migration' ]]; then
-        info "DB migration not required, skipping"
-    elif [[ -x "/usr/bin/mysql" ]]; then
-        if [[ -f "/tmp/mysql_db.sql" ]]; then
-            info "Restore of MySQL/MariaDB database detected; ensuring that MySQL/MariaDB is running properly"
-        else
-            warn "no local MySQL/MariDB 'mysql' database backup located"
-        fi
+    info "hook invoked after backup restore."
+    info quiet "Extras path = $(pwd)"
+    if [[ -f "/tmp/mysql_db.sql" ]]; then
+        warn "/tmp/mysql_db.sql exists"
+        warn "assuming legacy MySQL/MariaDB DB; restarting service"
+    else
+        info quiet "no local MySQL/MariDB 'mysql' database backup located"
         # ensure no mariadb processes still running
         systemctl stop mariadb
         pkill mariadb || true
@@ -96,19 +110,18 @@ elif [[ "$state" == "post" ]]  && [[ "$op" == "restore" ]]; then
             if [[ "$tries" -le 10 ]]; then
                 sleep 1
             else
-                echo "FATAL: $sock not found after waiting $tries seconds"
-                exit 1
+                fatal "FATAL: $sock not found after waiting $tries seconds"
             fi
             tries=$((tries+1))
-            
         done
 
         # reset root@localhost and mysql@locahost users are authenticted by unix_socket
         mysql --wait --batch --execute \
                  "FLUSH PRIVILEGES; \
                   GRANT SELECT ON *.* TO root@localhost IDENTIFIED VIA unix_socket; \
-                  GRANT SELECT ON *.* TO mysql@localhost IDENTIFIED VIA unix_socket;"
-        if [[ -f '/etc/mysql/debian.cnf' ]]; then
+                  GRANT SELECT ON *.* TO mysql@localhost IDENTIFIED VIA unix_socket;" \
+            || fatal "resetting local unix_socket authentication failed"
+        if [[ -f "/etc/mysql/debian.cnf" ]]; then
             # adjust /etc/mysql/debian.cnf if it uses the debian-sys-maint user
             if grep -q debian-sys-maint /etc/mysql/debian.cnf; then
                 sed -i "1a # This file has been automatically adjusted by TKLBAM" /etc/mysql/debian.cnf
@@ -123,17 +136,10 @@ elif [[ "$state" == "post" ]]  && [[ "$op" == "restore" ]]; then
         systemctl start mariadb
         info "MariaDB restarted"
         info "Everything should be good to go"
-    else
-        echo "/usr/bin/mysql not found (or not executable) - assuming no MySQL/MariaDB database"
     fi
 
 elif [[ "$op" == "backup" ]]; then
-
-    info "nothing to do when backing up"
-
+    info quiet "nothing to do when backing up"
 else
-
-    echo "bad hook invocation"
-    exit 1
-
+    fatal "bad hook invocation"
 fi
