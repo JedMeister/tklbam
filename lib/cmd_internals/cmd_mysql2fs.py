@@ -111,7 +111,7 @@ def main():
         callback = mysql.cb_print()
 
     mysql.mysql2fs(mysqldump_fh, outdir, limits, callback)
-    fh.close()
+    mysqldump_fh.close()
 
 if __name__ == "__main__":
     main()
