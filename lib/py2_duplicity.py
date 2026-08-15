@@ -54,8 +54,6 @@ else:
     if exists(TKLBAM_DUPLICITY_LIB):
         shutil.move(TKLBAM_DUPLICITY_LIB, TKLBAM_DUPLICITY_LIB_BAK)
 
-from cmd_internal import fmt_internal_command
-
 class Error(Exception):
     pass
 
