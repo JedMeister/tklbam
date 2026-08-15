@@ -12,7 +12,6 @@ import os
 from os.path import *
 
 import sys
-import shutil
 
 from subprocess import *
 from squid import Squid
@@ -22,37 +21,23 @@ from utils import AttrDict, iamroot
 import resource
 RLIMIT_NOFILE_MAX = 8192
 
-TARGET_ADDRESS = os.environ.get("TKLBAM_BUCKET", "")
-
-
-def _find_duplicity_pylib(path):
-    return "/usr/bin/duplicity"
-    if not isdir(path):
-        return None
-
-    for fpath, dnames, fnames in os.walk(path):
-        if 'duplicity' in dnames:
-            return fpath
-
-    return None
-
-PATH_DEPS = os.environ.get('TKLBAM_DEPS', '/usr/lib/tklbam/deps')
-PATH_DEPS_BIN = join(PATH_DEPS, "bin")
-PATH_DEPS_PYLIB = _find_duplicity_pylib(PATH_DEPS)
-
 # hard code default path to debian package duplicity executable
 DEFAULT_DUPLICITY = "/usr/bin/duplicity"
 DUPLICITY = os.environ.get('DUPLICITY', DEFAULT_DUPLICITY)
 
-TKLBAM_DUPLICITY_LIB = join(PATH_DEPS, "lib", "duplicity")
-TKLBAM_DUPLICITY_LIB_BAK = TKLBAM_DUPLICITY_LIB + "_tklbam"
-
-if DUPLICITY == DEFAULT_DUPLICITY:
-    if exists(TKLBAM_DUPLICITY_LIB_BAK):
-        shutil.move(TKLBAM_DUPLICITY_LIB_BAK, TKLBAM_DUPLICITY_LIB)
-else:
-    if exists(TKLBAM_DUPLICITY_LIB):
-        shutil.move(TKLBAM_DUPLICITY_LIB, TKLBAM_DUPLICITY_LIB_BAK)
+# Removed with the move to Debian's duplicity:
+#
+# - TARGET_ADDRESS / TKLBAM_BUCKET, PATH_DEPS_BIN and PATH_DEPS_PYLIB were all
+#   computed and never read. _find_duplicity_pylib() returned before its body,
+#   so it only ever yielded the duplicity *binary* path, not a pylib dir.
+#
+# - a pair of shutil.move() calls swapped deps/lib/duplicity in and out of the
+#   way depending on which duplicity binary was selected. That vendored library
+#   is no longer shipped, so both branches were dead - but they ran at *import*
+#   time in a root-owned directory, and conf imports this module, so had either
+#   path ever reappeared every non-root tklbam command would have died on
+#   import. Setting $DUPLICITY still selects a different binary; only the
+#   library shuffling is gone.
 
 class Error(Exception):
     pass
