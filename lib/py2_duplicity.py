@@ -12,6 +12,7 @@ import os
 from os.path import *
 
 import sys
+import tempfile
 
 from subprocess import *
 from squid import Squid
@@ -38,6 +39,26 @@ DUPLICITY = os.environ.get('DUPLICITY', DEFAULT_DUPLICITY)
 #   path ever reappeared every non-root tklbam command would have died on
 #   import. Setting $DUPLICITY still selects a different binary; only the
 #   library shuffling is gone.
+
+# boto3 runs this to (re-)fetch short lived IAM role credentials; see
+# cmd_internals/cmd_stsagent.py --json
+STSAGENT_COMMAND = "/usr/bin/tklbam-internal stsagent --json"
+
+def _write_aws_config(command=STSAGENT_COMMAND):
+    """Write a throwaway AWS config wiring boto3 up to our credential_process.
+
+    Returns the path. The caller owns the file and must remove it. It holds no
+    secrets - only the command to run - but is written 0600 regardless.
+    """
+    fd, path = tempfile.mkstemp(prefix="tklbam-aws-config-")
+    fob = os.fdopen(fd, "w")
+    try:
+        fob.write("[default]\ncredential_process = %s\n" % command)
+    finally:
+        fob.close()
+
+    os.chmod(path, 0600)
+    return path
 
 class Error(Exception):
     pass
@@ -69,6 +90,7 @@ class Duplicity:
             log = lambda s: None
 
         env = os.environ.copy()
+        aws_config = None
 
         if creds:
             if creds.type in ('devpay', 'iamuser'):
@@ -89,9 +111,21 @@ class Duplicity:
                 if exists("/var/lib/tklbam/iam_role"):
                     with open("/var/lib/tklbam/iam_role") as fob:
                         env['AWS_ROLE_ARN'] = fob.read().strip()
-                env['AWS_ACCESS_KEY_ID'] = creds["accesskey"]
-                env['AWS_SECRET_ACCESS_KEY'] = creds["secretkey"]
-                env['AWS_SESSION_TOKEN'] = creds["sessiontoken"]
+
+                # IAM role credentials are short lived, so handing boto3 a
+                # static copy meant a transfer outliving the token died part
+                # way through. Point it at a credential_process instead and it
+                # re-runs stsagent whenever the token is close to expiring.
+                #
+                # Static AWS_* variables beat credential_process in boto3's
+                # resolution order, so they must not be set here - including
+                # any inherited from the ambient environment.
+                for var in ('AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY',
+                            'AWS_SESSION_TOKEN'):
+                    env.pop(var, None)
+
+                aws_config = _write_aws_config()
+                env['AWS_CONFIG_FILE'] = aws_config
 
         env['PASSPHRASE'] = passphrase
 
@@ -115,8 +149,13 @@ class Duplicity:
 
         log("\n// duplicity started...")
         log("\n * self.command: " + str(self.command))
-        child = Popen(self.command, env=env)
-        exitcode = child.wait()
+        try:
+            child = Popen(self.command, env=env)
+            exitcode = child.wait()
+        finally:
+            # must outlive the child, but not this call
+            if aws_config and exists(aws_config):
+                os.remove(aws_config)
         log("\n// duplicity stopped...")
         if exitcode != 0:
             raise Error("non-zero exitcode (%d) from backup command: %s" % (exitcode, str(self)))
