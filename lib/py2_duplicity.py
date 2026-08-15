@@ -193,34 +193,52 @@ class Downloader(AttrDict):
         else:
             opts = []
 
-        if iamroot():
-            log("// started squid: caching downloaded backup archives to " + self.cache_dir + "\n")
+        # squid and the http_proxy override must be torn down even when the
+        # download fails. Duplicity.run() raises on a non-zero exit (bad
+        # passphrase, network failure, missing backup), and without a finally
+        # the teardown below was skipped and cleanup fell to Squid.__del__ ->
+        # Command.__del__. Those finalizers are only prompt under refcounting;
+        # on pypy they are not, so a failed restore orphaned the squid process
+        # (holding a port and the cache dir) and left http_proxy pointing at it.
+        squid = None
+        orig_env = None
+        proxy_overridden = False
 
-            squid = Squid(self.cache_size, self.cache_dir)
-            squid.start()
+        try:
+            if iamroot():
+                log("// started squid: caching downloaded backup archives to " + self.cache_dir + "\n")
 
-            orig_env = os.environ.get('http_proxy')
-            os.environ['http_proxy'] = squid.address
+                squid = Squid(self.cache_size, self.cache_dir)
+                squid.start()
 
-        _raise_rlimit(resource.RLIMIT_NOFILE, RLIMIT_NOFILE_MAX)
-        args = [ '--s3-unencrypted-connection', target.address, download_path ]
-        if force:
-            args = [ '--force' ] + args
+                orig_env = os.environ.get('http_proxy')
+                os.environ['http_proxy'] = squid.address
+                proxy_overridden = True
 
-        command = Duplicity(opts, *args)
+            _raise_rlimit(resource.RLIMIT_NOFILE, RLIMIT_NOFILE_MAX)
+            args = [ '--s3-unencrypted-connection', target.address, download_path ]
+            if force:
+                args = [ '--force' ] + args
 
-        log("# " + str(command))
+            command = Duplicity(opts, *args)
 
-        command.run(target.secret, target.credentials, debug=debug)
+            log("# " + str(command))
 
-        if iamroot():
-            if orig_env:
-                os.environ['http_proxy'] = orig_env
-            else:
-                del os.environ['http_proxy']
+            command.run(target.secret, target.credentials, debug=debug)
 
-            log("\n// stopping squid: download complete so caching no longer required\n")
-            squid.stop()
+        finally:
+            if proxy_overridden:
+                if orig_env:
+                    os.environ['http_proxy'] = orig_env
+                else:
+                    os.environ.pop('http_proxy', None)
+
+            # Squid.stop() is safe to call more than once and safe after a
+            # failed start(): it no-ops when self.command is unset, and
+            # Command.terminate() checks whether the process is still running.
+            if squid is not None:
+                log("\n// stopping squid\n")
+                squid.stop()
 
         sys.stdout.flush()
 
