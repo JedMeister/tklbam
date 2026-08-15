@@ -17,10 +17,29 @@ class TempFile(file):
         self.pid = os.getpid()
         file.__init__(self, path, "w")
 
-    def __del__(self):
+    def remove(self):
+        """Close and delete the temp file.
+
+        Idempotent, so it is safe to call explicitly and then again from
+        __del__. Callers should call it once they are done rather than relying
+        on __del__, which is not prompt under a non-refcounting GC (pypy) and
+        so left temp files lingering in /tmp.
+        """
         # sanity check in case we use fork somewhere
-        if self.pid == os.getpid():
+        if self.pid != os.getpid():
+            return
+
+        try:
+            self.close()
+        except IOError:
+            # the file is being discarded, so a flush failure can't matter
+            pass
+
+        if exists(self.path):
             os.remove(self.path)
+
+    def __del__(self):
+        self.remove()
 
 class TempDir(str):
     def __new__(cls, prefix='tmp', suffix='', dir=None):

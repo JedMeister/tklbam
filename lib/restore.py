@@ -177,11 +177,16 @@ class Restore:
     @staticmethod
     def _apply_overlay(src, dst, olist):
         tmp = TempFile("fsdelta-olist-")
-        for fpath in olist:
-            print >> tmp, fpath.lstrip('/')
-        tmp.close()
+        try:
+            for fpath in olist:
+                print >> tmp, fpath.lstrip('/')
+            tmp.close()
 
-        apply_overlay(src, dst, tmp.path)
+            apply_overlay(src, dst, tmp.path)
+        finally:
+            # drop it here rather than waiting for TempFile.__del__, which is
+            # not prompt under a non-refcounting GC (pypy)
+            tmp.remove()
 
     def files(self):
         extras = self.extras
