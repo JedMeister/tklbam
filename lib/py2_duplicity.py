@@ -97,9 +97,13 @@ class Duplicity:
             elif creds.type == 'iamrole':
                 # /var/lib/tklbam/iam_role should not be needed; this part was
                 # added early in the v19.x testing and should be removed...
+                # this read "self.env[...]", but Duplicity only ever sets
+                # self.command - so whenever the iam_role file existed this
+                # raised AttributeError before any credential reached the
+                # child. Same slip that 5d3bdef fixed in Target; missed here.
                 if exists("/var/lib/tklbam/iam_role"):
                     with open("/var/lib/tklbam/iam_role") as fob:
-                        self.env['AWS_ROLE_ARN'] = fob.read().strip()
+                        env['AWS_ROLE_ARN'] = fob.read().strip()
                 env['AWS_ACCESS_KEY_ID'] = creds["accesskey"]
                 env['AWS_SECRET_ACCESS_KEY'] = creds["secretkey"]
                 env['AWS_SESSION_TOKEN'] = creds["sessiontoken"]
@@ -154,8 +158,14 @@ class Target(AttrDict):
         AttrDict.__init__(self)
         addr_split = address.split("/")
         region = ""
+        # only S3 targets carry a region. file://, rsync://, ssh://, ftp:// and
+        # friends are all legitimate backup addresses (see tklbam-backup
+        # --help), and they used to trip the warning below - and a short
+        # "s3:..." address indexed addr_split[2] without checking the length.
+        is_s3 = addr_split[0] == "s3:"
         if (
-            addr_split[0] == "s3:"
+            is_s3
+            and len(addr_split) > 2
             and addr_split[2].startswith("s3-")
             and addr_split[2].endswith(".amazonaws.com")
         ):
@@ -163,7 +173,7 @@ class Target(AttrDict):
             del addr_split[2]
             address = "/".join(addr_split)
             self["AWS_REGION"] = region
-        else:
+        elif is_s3:
             print "ERROR: could not determine AWS region - this may cause failure"
         self.region = region
         self.address = address
@@ -309,7 +319,12 @@ class Uploader(AttrDict):
             s3_multipart_chunk_size = self.volsize / self.s3_parallel_uploads
             if s3_multipart_chunk_size < 5:
                 s3_multipart_chunk_size = 5
-            args += [ '--s3-use-multiprocessing', '--s3-multipart-chunk-size=%d' % s3_multipart_chunk_size ]
+            # --s3-use-multiprocessing was removed in duplicity 2.0.0 ("Option
+            # '--s3-use-multiprocessing' was removed in 2.0.0"), so passing it
+            # made any backup with s3-parallel-uploads > 1 fail outright.
+            # --s3-multipart-max-procs is the modern equivalent.
+            args += [ '--s3-multipart-chunk-size=%d' % s3_multipart_chunk_size,
+                      '--s3-multipart-max-procs=%d' % self.s3_parallel_uploads ]
 
         args += [ source_dir, target.address ]
 
