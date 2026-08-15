@@ -193,10 +193,20 @@ Run "tklbam-init --help" for further details.
                 profile_stamp()
 
             else:
-                profile_archive.extract(self.path.profile)
-                profile_stamp()
-                os.utime(self.path.profile.stamp, (0, profile_archive.timestamp))
-                self._file_str(self.path.profile.profile_id, profile_archive.profile_id)
+                # the archive is a temp file created by Backups.get_new_profile();
+                # drop it as soon as it has been extracted rather than leaving it
+                # to ProfileArchive.__del__, which is not prompt under a
+                # non-refcounting GC (pypy) and so left one archive per profile
+                # update lying around in /tmp. DummyProfileArchive overrides
+                # remove() to a no-op, since its archive is the dummy hub's
+                # stored profile rather than a temp copy.
+                try:
+                    profile_archive.extract(self.path.profile)
+                    profile_stamp()
+                    os.utime(self.path.profile.stamp, (0, profile_archive.timestamp))
+                    self._file_str(self.path.profile.profile_id, profile_archive.profile_id)
+                finally:
+                    profile_archive.remove()
 
     profile = property(profile, profile)
 
