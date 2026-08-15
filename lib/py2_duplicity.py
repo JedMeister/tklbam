@@ -153,6 +153,25 @@ def _raise_rlimit(type, newlimit):
     except ValueError:
         return
 
+def _region_opts(target):
+    """Duplicity options carrying the S3 region, if this target has one.
+
+    Target.__init__ strips the region-bearing endpoint host out of the address,
+    and it has to: duplicity parses the whole s3:// URL as a path, so
+    "s3://s3-eu-west-1.amazonaws.com/bucket" would be read as bucket
+    "s3-eu-west-1.amazonaws.com". That leaves --s3-region-name as the only way
+    to tell duplicity which region the bucket is in.
+
+    Previously the region was extracted, stashed on the Target and never read
+    by anything, so boto3 was left to guess - which works for a bucket in
+    whichever region it defaults to and fails for the rest.
+    """
+    region = getattr(target, "region", "")
+    if not region:
+        return []
+
+    return [("s3-region-name", region)]
+
 class Target(AttrDict):
     def __init__(self, address, credentials, secret):
         AttrDict.__init__(self)
@@ -172,7 +191,6 @@ class Target(AttrDict):
             region = addr_split[2][3:-14]
             del addr_split[2]
             address = "/".join(addr_split)
-            self["AWS_REGION"] = region
         elif is_s3:
             print "ERROR: could not determine AWS region - this may cause failure"
         self.region = region
@@ -200,6 +218,8 @@ class Downloader(AttrDict):
             opts = [("restore-time", self.time)]
         else:
             opts = []
+
+        opts += _region_opts(target)
 
         # squid and the http_proxy override must be torn down even when the
         # download fails. Duplicity.run() raises on a non-zero exit (bad
@@ -288,6 +308,9 @@ class Uploader(AttrDict):
         opts = []
         if self.verbose:
             opts += [('verbosity', 5)]
+
+        opts += _region_opts(target)
+
         if force_cleanup:
             cleanup_command = Duplicity(opts, "cleanup", "--force", target.address)
             log(cleanup_command)
