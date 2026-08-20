@@ -43,7 +43,7 @@ class CliWrapper:
     COMMANDS_USAGE_ORDER = []
 
     @classmethod
-    def _usage(cls, commands, e=None):
+    def _usage(cls, commands, e=None, exitcode=1):
         if e:
             print >> sys.stderr, "error: " + str(e)
 
@@ -70,7 +70,7 @@ class CliWrapper:
         for command in set(commands.keys()) - set(cls.COMMANDS_USAGE_ORDER):
                 print >> sys.stderr, tpl % (command, shortdesc(command))
 
-        sys.exit(1)
+        sys.exit(exitcode)
 
     @classmethod
     def main(cls):
@@ -81,6 +81,13 @@ class CliWrapper:
             cls._usage(commands)
 
         command = args[0]
+
+        # asking for help is not an error. This used to fall through to the
+        # "no such command" branch, so `tklbam --help` printed an error line
+        # above the very help it had been asked for.
+        if command in ('-h', '--help', 'help'):
+            cls._usage(commands, exitcode=0)
+
         if command not in commands:
             cls._usage(commands, "no such command")
 
