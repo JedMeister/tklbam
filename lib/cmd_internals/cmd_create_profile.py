@@ -127,14 +127,19 @@ class ProfileGenerator:
                   for path in paths ]
 
         tmp = TempFile()
-        dirindex.create(tmp.path, paths)
+        try:
+            dirindex.create(tmp.path, paths)
 
-        with open(tmp.path) as fob:
-            filtered = [
-                re.sub(r'^' + path_rootfs, '', line)
-                for line in fob.readlines()
-            ]
-        return "".join(filtered)
+            with open(tmp.path) as fob:
+                filtered = [
+                    re.sub(r'^' + path_rootfs, '', line)
+                    for line in fob.readlines()
+                ]
+            return "".join(filtered)
+        finally:
+            # drop it here rather than waiting for TempFile.__del__, which is
+            # not prompt under a non-refcounting GC (pypy)
+            tmp.remove()
 
     @staticmethod
     def _get_packages(path_rootfs):

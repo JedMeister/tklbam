@@ -11,8 +11,9 @@
 import os
 from os.path import *
 
+import re
 import sys
-import shutil
+import tempfile
 
 from subprocess import *
 from squid import Squid
@@ -22,39 +23,43 @@ from utils import AttrDict, iamroot
 import resource
 RLIMIT_NOFILE_MAX = 8192
 
-TARGET_ADDRESS = os.environ.get("TKLBAM_BUCKET", "")
-
-
-def _find_duplicity_pylib(path):
-    return "/usr/bin/duplicity"
-    if not isdir(path):
-        return None
-
-    for fpath, dnames, fnames in os.walk(path):
-        if 'duplicity' in dnames:
-            return fpath
-
-    return None
-
-PATH_DEPS = os.environ.get('TKLBAM_DEPS', '/usr/lib/tklbam/deps')
-PATH_DEPS_BIN = join(PATH_DEPS, "bin")
-PATH_DEPS_PYLIB = _find_duplicity_pylib(PATH_DEPS)
-
 # hard code default path to debian package duplicity executable
 DEFAULT_DUPLICITY = "/usr/bin/duplicity"
 DUPLICITY = os.environ.get('DUPLICITY', DEFAULT_DUPLICITY)
 
-TKLBAM_DUPLICITY_LIB = join(PATH_DEPS, "lib", "duplicity")
-TKLBAM_DUPLICITY_LIB_BAK = TKLBAM_DUPLICITY_LIB + "_tklbam"
+# Removed with the move to Debian's duplicity:
+#
+# - TARGET_ADDRESS / TKLBAM_BUCKET, PATH_DEPS_BIN and PATH_DEPS_PYLIB were all
+#   computed and never read. _find_duplicity_pylib() returned before its body,
+#   so it only ever yielded the duplicity *binary* path, not a pylib dir.
+#
+# - a pair of shutil.move() calls swapped deps/lib/duplicity in and out of the
+#   way depending on which duplicity binary was selected. That vendored library
+#   is no longer shipped, so both branches were dead - but they ran at *import*
+#   time in a root-owned directory, and conf imports this module, so had either
+#   path ever reappeared every non-root tklbam command would have died on
+#   import. Setting $DUPLICITY still selects a different binary; only the
+#   library shuffling is gone.
 
-if DUPLICITY == DEFAULT_DUPLICITY:
-    if exists(TKLBAM_DUPLICITY_LIB_BAK):
-        shutil.move(TKLBAM_DUPLICITY_LIB_BAK, TKLBAM_DUPLICITY_LIB)
-else:
-    if exists(TKLBAM_DUPLICITY_LIB):
-        shutil.move(TKLBAM_DUPLICITY_LIB, TKLBAM_DUPLICITY_LIB_BAK)
+# boto3 runs this to (re-)fetch short lived IAM role credentials; see
+# cmd_internals/cmd_stsagent.py --json
+STSAGENT_COMMAND = "/usr/bin/tklbam-internal stsagent --json"
 
-from cmd_internal import fmt_internal_command
+def _write_aws_config(command=STSAGENT_COMMAND):
+    """Write a throwaway AWS config wiring boto3 up to our credential_process.
+
+    Returns the path. The caller owns the file and must remove it. It holds no
+    secrets - only the command to run - but is written 0600 regardless.
+    """
+    fd, path = tempfile.mkstemp(prefix="tklbam-aws-config-")
+    fob = os.fdopen(fd, "w")
+    try:
+        fob.write("[default]\ncredential_process = %s\n" % command)
+    finally:
+        fob.close()
+
+    os.chmod(path, 0600)
+    return path
 
 class Error(Exception):
     pass
@@ -86,6 +91,7 @@ class Duplicity:
             log = lambda s: None
 
         env = os.environ.copy()
+        aws_config = None
 
         if creds:
             if creds.type in ('devpay', 'iamuser'):
@@ -99,12 +105,28 @@ class Duplicity:
             elif creds.type == 'iamrole':
                 # /var/lib/tklbam/iam_role should not be needed; this part was
                 # added early in the v19.x testing and should be removed...
+                # this read "self.env[...]", but Duplicity only ever sets
+                # self.command - so whenever the iam_role file existed this
+                # raised AttributeError before any credential reached the
+                # child. Same slip that 5d3bdef fixed in Target; missed here.
                 if exists("/var/lib/tklbam/iam_role"):
                     with open("/var/lib/tklbam/iam_role") as fob:
-                        self.env['AWS_ROLE_ARN'] = fob.read().strip()
-                env['AWS_ACCESS_KEY_ID'] = creds["accesskey"]
-                env['AWS_SECRET_ACCESS_KEY'] = creds["secretkey"]
-                env['AWS_SESSION_TOKEN'] = creds["sessiontoken"]
+                        env['AWS_ROLE_ARN'] = fob.read().strip()
+
+                # IAM role credentials are short lived, so handing boto3 a
+                # static copy meant a transfer outliving the token died part
+                # way through. Point it at a credential_process instead and it
+                # re-runs stsagent whenever the token is close to expiring.
+                #
+                # Static AWS_* variables beat credential_process in boto3's
+                # resolution order, so they must not be set here - including
+                # any inherited from the ambient environment.
+                for var in ('AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY',
+                            'AWS_SESSION_TOKEN'):
+                    env.pop(var, None)
+
+                aws_config = _write_aws_config()
+                env['AWS_CONFIG_FILE'] = aws_config
 
         env['PASSPHRASE'] = passphrase
 
@@ -128,8 +150,13 @@ class Duplicity:
 
         log("\n// duplicity started...")
         log("\n * self.command: " + str(self.command))
-        child = Popen(self.command, env=env)
-        exitcode = child.wait()
+        try:
+            child = Popen(self.command, env=env)
+            exitcode = child.wait()
+        finally:
+            # must outlive the child, but not this call
+            if aws_config and exists(aws_config):
+                os.remove(aws_config)
         log("\n// duplicity stopped...")
         if exitcode != 0:
             raise Error("non-zero exitcode (%d) from backup command: %s" % (exitcode, str(self)))
@@ -151,21 +178,62 @@ def _raise_rlimit(type, newlimit):
     except ValueError:
         return
 
+def _region_opts(target):
+    """Duplicity options carrying the S3 region, if this target has one.
+
+    Target.__init__ strips the region-bearing endpoint host out of the address,
+    and it has to: duplicity parses the whole s3:// URL as a path, so
+    "s3://s3-eu-west-1.amazonaws.com/bucket" would be read as bucket
+    "s3-eu-west-1.amazonaws.com". That leaves --s3-region-name as the only way
+    to tell duplicity which region the bucket is in.
+
+    Previously the region was extracted, stashed on the Target and never read
+    by anything, so boto3 was left to guess - which works for a bucket in
+    whichever region it defaults to and fails for the rest.
+    """
+    region = getattr(target, "region", "")
+    if not region:
+        return []
+
+    return [("s3-region-name", region)]
+
+# An S3 endpoint host, in the spellings AWS has used over the years:
+#
+#   s3-ap-southeast-2.amazonaws.com             what the Hub emits today
+#   s3.ap-southeast-2.amazonaws.com             AWS's current standard form
+#   s3.dualstack.ap-southeast-2.amazonaws.com   IPv6 dual-stack
+#
+# The host has to come out of the address whichever spelling it is, because
+# duplicity parses the whole s3:// URL as a path and would otherwise take the
+# endpoint for the bucket name. Once it is gone, the region it carried is the
+# only thing left that can tell duplicity where the bucket lives, hence
+# _region_opts().
+#
+# This replaces a startswith("s3-") test and an addr_split[2][3:-14] slice,
+# which silently depended on ".amazonaws.com" being exactly 14 characters.
+S3_ENDPOINT_RE = re.compile(
+    r'^s3[.-](?:dualstack\.)?([a-z0-9-]+)\.amazonaws\.com$')
+
 class Target(AttrDict):
     def __init__(self, address, credentials, secret):
         AttrDict.__init__(self)
         addr_split = address.split("/")
         region = ""
-        if (
-            addr_split[0] == "s3:"
-            and addr_split[2].startswith("s3-")
-            and addr_split[2].endswith(".amazonaws.com")
-        ):
-            region = addr_split[2][3:-14]
+        # only S3 targets carry a region. file://, rsync://, ssh://, ftp:// and
+        # friends are all legitimate backup addresses (see tklbam-backup
+        # --help), and they used to trip the warning below - and a short
+        # "s3:..." address indexed addr_split[2] without checking the length.
+        is_s3 = addr_split[0] == "s3:"
+
+        endpoint = None
+        if is_s3 and len(addr_split) > 2:
+            endpoint = S3_ENDPOINT_RE.match(addr_split[2])
+
+        if endpoint:
+            region = endpoint.group(1)
             del addr_split[2]
             address = "/".join(addr_split)
-            self["AWS_REGION"] = region
-        else:
+        elif is_s3:
             print "ERROR: could not determine AWS region - this may cause failure"
         self.region = region
         self.address = address
@@ -193,34 +261,58 @@ class Downloader(AttrDict):
         else:
             opts = []
 
-        if iamroot():
-            log("// started squid: caching downloaded backup archives to " + self.cache_dir + "\n")
+        opts += _region_opts(target)
 
-            squid = Squid(self.cache_size, self.cache_dir)
-            squid.start()
+        # squid and the http_proxy override must be torn down even when the
+        # download fails. Duplicity.run() raises on a non-zero exit (bad
+        # passphrase, network failure, missing backup), and without a finally
+        # the teardown below was skipped and cleanup fell to Squid.__del__ ->
+        # Command.__del__. Those finalizers are only prompt under refcounting;
+        # on pypy they are not, so a failed restore orphaned the squid process
+        # (holding a port and the cache dir) and left http_proxy pointing at it.
+        squid = None
+        orig_env = None
+        proxy_overridden = False
 
-            orig_env = os.environ.get('http_proxy')
-            os.environ['http_proxy'] = squid.address
+        try:
+            if iamroot():
+                log("// started squid: caching downloaded backup archives to " + self.cache_dir + "\n")
 
-        _raise_rlimit(resource.RLIMIT_NOFILE, RLIMIT_NOFILE_MAX)
-        args = [ '--s3-unencrypted-connection', target.address, download_path ]
-        if force:
-            args = [ '--force' ] + args
+                squid = Squid(self.cache_size, self.cache_dir)
+                squid.start()
 
-        command = Duplicity(opts, *args)
+                orig_env = os.environ.get('http_proxy')
+                os.environ['http_proxy'] = squid.address
+                proxy_overridden = True
 
-        log("# " + str(command))
+            _raise_rlimit(resource.RLIMIT_NOFILE, RLIMIT_NOFILE_MAX)
+            args = [ '--s3-unencrypted-connection', target.address, download_path ]
+            if force:
+                args = [ '--force' ] + args
 
-        command.run(target.secret, target.credentials, debug=debug)
+            # duplicity 2.0+ wants an explicit action verb and otherwise infers
+            # one, logging "No valid action found. Will imply 'restore' ...". It
+            # infers correctly, but say it outright: the cleanup call in Uploader
+            # already passes a verb, and a future duplicity may stop inferring.
+            command = Duplicity(opts, "restore", *args)
 
-        if iamroot():
-            if orig_env:
-                os.environ['http_proxy'] = orig_env
-            else:
-                del os.environ['http_proxy']
+            log("# " + str(command))
 
-            log("\n// stopping squid: download complete so caching no longer required\n")
-            squid.stop()
+            command.run(target.secret, target.credentials, debug=debug)
+
+        finally:
+            if proxy_overridden:
+                if orig_env:
+                    os.environ['http_proxy'] = orig_env
+                else:
+                    os.environ.pop('http_proxy', None)
+
+            # Squid.stop() is safe to call more than once and safe after a
+            # failed start(): it no-ops when self.command is unset, and
+            # Command.terminate() checks whether the process is still running.
+            if squid is not None:
+                log("\n// stopping squid\n")
+                squid.stop()
 
         sys.stdout.flush()
 
@@ -262,6 +354,9 @@ class Uploader(AttrDict):
         opts = []
         if self.verbose:
             opts += [('verbosity', 5)]
+
+        opts += _region_opts(target)
+
         if force_cleanup:
             cleanup_command = Duplicity(opts, "cleanup", "--force", target.address)
             log(cleanup_command)
@@ -293,11 +388,19 @@ class Uploader(AttrDict):
             s3_multipart_chunk_size = self.volsize / self.s3_parallel_uploads
             if s3_multipart_chunk_size < 5:
                 s3_multipart_chunk_size = 5
-            args += [ '--s3-use-multiprocessing', '--s3-multipart-chunk-size=%d' % s3_multipart_chunk_size ]
+            # --s3-use-multiprocessing was removed in duplicity 2.0.0 ("Option
+            # '--s3-use-multiprocessing' was removed in 2.0.0"), so passing it
+            # made any backup with s3-parallel-uploads > 1 fail outright.
+            # --s3-multipart-max-procs is the modern equivalent.
+            args += [ '--s3-multipart-chunk-size=%d' % s3_multipart_chunk_size,
+                      '--s3-multipart-max-procs=%d' % self.s3_parallel_uploads ]
 
         args += [ source_dir, target.address ]
 
-        backup_command = Duplicity(opts, *args)
+        # explicit action verb - see the comment in Downloader.__call__. The
+        # verb goes between the options and the args, so the order-sensitive
+        # --include / --include-filelist / --exclude set is untouched.
+        backup_command = Duplicity(opts, "backup", *args)
 
         log(str(backup_command))
         backup_command.run(target.secret, target.credentials, debug=debug)

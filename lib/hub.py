@@ -300,9 +300,19 @@ class ProfileArchive:
     def extract(self, path):
         executil.system("tar -zxf %s -C %s" % (self.path_archive, path))
 
-    def __del__(self):
+    def remove(self):
+        """Delete the downloaded archive.
+
+        Idempotent, so it is safe to call explicitly and then again from
+        __del__. Callers should call it once they are done with the archive:
+        __del__ alone is not prompt under a non-refcounting GC (pypy), which
+        left downloaded profile archives accumulating in /tmp.
+        """
         if os.path.exists(self.path_archive):
             os.remove(self.path_archive)
+
+    def __del__(self):
+        self.remove()
 
 from conf import Conf
 if os.environ.get("TKLBAM_DUMMYHUB") or os.path.exists(os.path.join(Conf.DEFAULT_PATH, "dummyhub")):

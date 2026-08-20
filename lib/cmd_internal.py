@@ -14,22 +14,15 @@ Execute an internal command
 """
 import _init_sys_path
 
-import os
-from os.path import realpath
 from cliwrapper import CliWrapper
 
 import cmd_internals
-from pylib.executil import fmt_command
 
 class CliWrapper(CliWrapper):
     DESCRIPTION = __doc__
     PATH = cmd_internals.__path__
 
 main = CliWrapper.main
-
-def fmt_internal_command(command, *args):
-    internal_command = [ realpath(__file__), command ] + list(args)
-    return fmt_command("/usr/lib/tklbam-pypy2/bin/pypy", *internal_command)
 
 if __name__ == "__main__":
     CliWrapper.main()

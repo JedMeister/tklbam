@@ -38,7 +38,10 @@ Options:
                                    backup profile. Backup configurations will only be taken
                                    from /etc/tklbam.
 
-    --force-profile=PATH           Path to a custom backup profile
+    --force-profile=PATH           Path to a custom backup profile DIRECTORY
+                                   (as created by "tklbam-internal
+                                   create-profile"). An archive of a profile is
+                                   not accepted - pass the directory itself.
                                    Details: tklbam-internal create-profile --help
 
     --solo                         Solo mode: disables link to Hub.

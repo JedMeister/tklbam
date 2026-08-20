@@ -130,6 +130,7 @@ Examples:
 """
 import _init_sys_path
 
+import atexit
 import os
 import sys
 import getopt
@@ -475,6 +476,24 @@ def main():
         else:
             raw_download_path = TempDir(prefix="tklbam-")
             os.chmod(raw_download_path, 0700)
+
+            # This holds the *decrypted* backup extract, so it must not outlive
+            # the process. TempDir only removes itself from __del__, which is
+            # not prompt under a non-refcounting GC (pypy), so a failed restore
+            # could leave the whole decrypted backup sitting in /tmp. Register
+            # the removal explicitly so it runs on every exit path, including
+            # fatal() -> sys.exit() and an unhandled exception. remove() checks
+            # for existence first, so the __del__ fallback stays harmless.
+            _extract_dir = raw_download_path
+            _extract_pid = os.getpid()
+
+            def _remove_extract():
+                # mirrors TempDir.__del__: only the process that created the
+                # dir may remove it, so a forked child can never delete it
+                if os.getpid() == _extract_pid:
+                    _extract_dir.remove()
+
+            atexit.register(_remove_extract)
 
     update_profile(conf.force_profile, strict=False)
 

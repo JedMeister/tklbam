@@ -34,6 +34,10 @@ class _Registry(object):
     class CachedProfile(Exception):
         pass
 
+    class InvalidProfilePath(Exception):
+        """--force-profile looked like a local path, but is not a usable
+        profile directory. Raised locally, so it never reaches the Hub."""
+
     class ProfileNotFound(Exception):
         """\
 Without a profile TKLBAM can't auto-configure the backup process for your
@@ -193,10 +197,20 @@ Run "tklbam-init --help" for further details.
                 profile_stamp()
 
             else:
-                profile_archive.extract(self.path.profile)
-                profile_stamp()
-                os.utime(self.path.profile.stamp, (0, profile_archive.timestamp))
-                self._file_str(self.path.profile.profile_id, profile_archive.profile_id)
+                # the archive is a temp file created by Backups.get_new_profile();
+                # drop it as soon as it has been extracted rather than leaving it
+                # to ProfileArchive.__del__, which is not prompt under a
+                # non-refcounting GC (pypy) and so left one archive per profile
+                # update lying around in /tmp. DummyProfileArchive overrides
+                # remove() to a no-op, since its archive is the dummy hub's
+                # stored profile rather than a temp copy.
+                try:
+                    profile_archive.extract(self.path.profile)
+                    profile_stamp()
+                    os.utime(self.path.profile.stamp, (0, profile_archive.timestamp))
+                    self._file_str(self.path.profile.profile_id, profile_archive.profile_id)
+                finally:
+                    profile_archive.remove()
 
     profile = property(profile, profile)
 
@@ -222,6 +236,44 @@ Run "tklbam-init --help" for further details.
 
     backup_resume_conf = property(backup_resume_conf, backup_resume_conf)
 
+    @staticmethod
+    def _resolve_profile_id(profile_id):
+        """Expand a local profile path, and reject one that can't work.
+
+        Anything which is not a local directory gets sent to the Hub as a
+        profile id. That means a path which is mistyped, or still contains an
+        unexpanded '~', or points at an archive rather than a directory, used
+        to be shipped off to the Hub and come back as a baffling Hub error
+        about a missing backup profile archive.
+        """
+        if not profile_id or profile_id == _Registry.EMPTY_PROFILE:
+            return profile_id
+
+        # the shell does not expand '~' in --force-profile=~/... and nothing
+        # else did either, so it reached us verbatim
+        expanded = expanduser(profile_id)
+
+        if isdir(expanded):
+            return expanded
+
+        # a Hub profile id looks like "core-18.1-bookworm"; anything with a
+        # path separator, or a leading '~' or '.', was meant to be local
+        looks_local = (profile_id.startswith('~')
+                       or profile_id.startswith('.')
+                       or '/' in profile_id)
+
+        if not looks_local:
+            return profile_id
+
+        if exists(expanded):
+            raise _Registry.InvalidProfilePath(
+                "%s is not a directory - a custom profile must be the profile"
+                " directory itself, not an archive of it"
+                " (see: tklbam-internal create-profile --help)" % expanded)
+
+        raise _Registry.InvalidProfilePath(
+            "no such profile directory: %s" % expanded)
+
     def _update_profile(self, profile_id=None):
         """Get a new profile if we don't have a profile in the registry or the Hub
         has a newer profile for this appliance. If we can't contact the Hub raise
@@ -232,6 +284,8 @@ Run "tklbam-init --help" for further details.
                 profile_id = self.profile.profile_id
             else:
                 profile_id = detect_profile_id()
+
+        profile_id = self._resolve_profile_id(profile_id)
 
         if profile_id == self.EMPTY_PROFILE or isdir(profile_id):
             self.profile = profile_id
@@ -368,6 +422,18 @@ Creating an empty profile, which means:
                 # be extra nice to people who aren't using --force-profile
                 print >> sys.stderr, "\n" + e.__doc__
 
+            sys.exit(1)
+
+        except registry.InvalidProfilePath, e:
+            print >> sys.stderr, "error: " + str(e)
+            sys.exit(1)
+
+        except hub.Error, e:
+            # backstop. _update_profile re-raises any Hub error it doesn't
+            # recognise, and nothing above caught those, so an unexpected Hub
+            # failure escaped as a raw traceback. Must stay last: NotSubscribed
+            # and Backups.NotInitialized are subclasses and are handled above.
+            print >> sys.stderr, "TurnKey Hub Error: %s" % str(e)
             sys.exit(1)
     os.environ['TKLBAM_PROFILE_ID'] = registry.profile.profile_id
 

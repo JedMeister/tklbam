@@ -233,6 +233,12 @@ except NameError:
     dummydb = _DummyDB("/var/tmp/tklbam/dummyhub")
 
 class DummyProfileArchive(ProfileArchive):
+    # path_archive here is the dummy hub's *stored* profile (see
+    # _DummyDB.get_profile), not a downloaded temp copy, so it must never be
+    # deleted - doing so would destroy the dummy hub's profile store.
+    def remove(self):
+        pass
+
     def __del__(self):
         pass
 

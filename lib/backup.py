@@ -171,7 +171,6 @@ class Backup:
             # support empty profiles
             dirindex = profile.dirindex if exists(profile.dirindex) else "/dev/null"
             dirindex_conf = profile.dirindex_conf if exists(profile.dirindex_conf) else "/dev/null"
-            print "backup.Backup._create_extras - conf.overrides.fs: " + str(conf.overrides.fs)
             self._write_whatchanged(extras.fsdelta, extras.fsdelta_olist,
                                     dirindex, dirindex_conf,
                                     conf.overrides.fs)
