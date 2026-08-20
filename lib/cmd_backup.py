@@ -444,7 +444,6 @@ def main():
 
             else:
                 hooks.backup.pre()
-                print "# cmd_backup.main() (conf.overrides): " + str(conf.overrides)
                 b = backup.Backup(registry.profile,
                                   conf.overrides,
                                   conf.backup_skip_files, conf.backup_skip_packages, conf.backup_skip_database,
@@ -458,7 +457,7 @@ def main():
                     print "\n" + fmt_title("Executing Duplicity to backup system changes to encrypted, incremental archives")
                     _print("export PASSPHRASE=$(cat %s)" % conf.secretfile)
 
-                    uploader = duplicity.Uploader("debug",
+                    uploader = duplicity.Uploader(True,
                                                   conf.volsize,
                                                   conf.full_backup,
                                                   conf.s3_parallel_uploads,
