@@ -11,6 +11,7 @@
 import os
 from os.path import *
 
+import re
 import sys
 import tempfile
 
@@ -196,6 +197,23 @@ def _region_opts(target):
 
     return [("s3-region-name", region)]
 
+# An S3 endpoint host, in the spellings AWS has used over the years:
+#
+#   s3-ap-southeast-2.amazonaws.com             what the Hub emits today
+#   s3.ap-southeast-2.amazonaws.com             AWS's current standard form
+#   s3.dualstack.ap-southeast-2.amazonaws.com   IPv6 dual-stack
+#
+# The host has to come out of the address whichever spelling it is, because
+# duplicity parses the whole s3:// URL as a path and would otherwise take the
+# endpoint for the bucket name. Once it is gone, the region it carried is the
+# only thing left that can tell duplicity where the bucket lives, hence
+# _region_opts().
+#
+# This replaces a startswith("s3-") test and an addr_split[2][3:-14] slice,
+# which silently depended on ".amazonaws.com" being exactly 14 characters.
+S3_ENDPOINT_RE = re.compile(
+    r'^s3[.-](?:dualstack\.)?([a-z0-9-]+)\.amazonaws\.com$')
+
 class Target(AttrDict):
     def __init__(self, address, credentials, secret):
         AttrDict.__init__(self)
@@ -206,13 +224,13 @@ class Target(AttrDict):
         # --help), and they used to trip the warning below - and a short
         # "s3:..." address indexed addr_split[2] without checking the length.
         is_s3 = addr_split[0] == "s3:"
-        if (
-            is_s3
-            and len(addr_split) > 2
-            and addr_split[2].startswith("s3-")
-            and addr_split[2].endswith(".amazonaws.com")
-        ):
-            region = addr_split[2][3:-14]
+
+        endpoint = None
+        if is_s3 and len(addr_split) > 2:
+            endpoint = S3_ENDPOINT_RE.match(addr_split[2])
+
+        if endpoint:
+            region = endpoint.group(1)
             del addr_split[2]
             address = "/".join(addr_split)
         elif is_s3:
