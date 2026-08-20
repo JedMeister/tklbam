@@ -290,7 +290,11 @@ class Downloader(AttrDict):
             if force:
                 args = [ '--force' ] + args
 
-            command = Duplicity(opts, *args)
+            # duplicity 2.0+ wants an explicit action verb and otherwise infers
+            # one, logging "No valid action found. Will imply 'restore' ...". It
+            # infers correctly, but say it outright: the cleanup call in Uploader
+            # already passes a verb, and a future duplicity may stop inferring.
+            command = Duplicity(opts, "restore", *args)
 
             log("# " + str(command))
 
@@ -393,7 +397,10 @@ class Uploader(AttrDict):
 
         args += [ source_dir, target.address ]
 
-        backup_command = Duplicity(opts, *args)
+        # explicit action verb - see the comment in Downloader.__call__. The
+        # verb goes between the options and the args, so the order-sensitive
+        # --include / --include-filelist / --exclude set is untouched.
+        backup_command = Duplicity(opts, "backup", *args)
 
         log(str(backup_command))
         backup_command.run(target.secret, target.credentials, debug=debug)
